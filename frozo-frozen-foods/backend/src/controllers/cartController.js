@@ -15,9 +15,29 @@ exports.getCart = async (req, res) => {
     }
     
     res.json({
-      success: true,
-      cart
-    });
+  success: true,
+  cart: {
+    _id: cart._id,
+    userId: cart.userId,
+    items: cart.items.map(item => ({
+      _id: item._id,
+      productId: item.productId ? item.productId.toString() : null,
+      name: item.name,
+      price: item.price,
+      quantity: item.quantity,
+      imageUrl: item.imageUrl,
+      category: item.category,
+      weight: item.weight
+    })),
+    totalItems: cart.totalItems,
+    subtotal: cart.subtotal,
+    shipping: cart.shipping,
+    tax: cart.tax,
+    total: cart.total,
+    createdAt: cart.createdAt,
+    updatedAt: cart.updatedAt
+  }
+});
     
   } catch (error) {
     console.error('Error fetching cart:', error);
@@ -95,23 +115,32 @@ const calculateCartTotals = (cart) => {
     // Calculate totals
 cart = calculateCartTotals(cart);
     await cart.save();
-    
+
     
     console.log('✅ Cart saved successfully');
     console.log(`📊 Final cart: ${cart.totalItems} items, Subtotal: $${cart.subtotal}, Tax: $${cart.tax}, Total: $${cart.total}`);
     
     res.json({
-      success: true,
-      message: 'Item added to cart',
-      cart: {
-        totalItems: cart.totalItems,
-        subtotal: cart.subtotal,
-        shipping: cart.shipping,
-        tax: cart.tax,
-        total: cart.total,
-        items: cart.items
-      }
-    });
+  success: true,
+  message: 'Item added to cart',
+  cart: {
+    items: cart.items.map(item => ({
+      _id: item._id,
+      productId: item.productId ? item.productId.toString() : null,
+      name: item.name,
+      price: item.price,
+      quantity: item.quantity,
+      imageUrl: item.imageUrl,
+      category: item.category,
+      weight: item.weight
+    })),
+    totalItems: cart.totalItems,
+    subtotal: cart.subtotal,
+    shipping: cart.shipping,
+    tax: cart.tax,
+    total: cart.total
+  }
+});
     
   } catch (error) {
     console.error('❌ Error adding to cart:', error);
@@ -158,15 +187,26 @@ exports.updateCartItem = async (req, res) => {
     await cart.save();
     
     res.json({
-      success: true,
-      message: 'Cart updated',
-      cart: {
-        totalItems: cart.totalItems,
-        subtotal: cart.subtotal,
-        total: cart.total,
-        items: cart.items
-      }
-    });
+  success: true,
+  message: 'Item updated to cart',
+  cart: {
+    items: cart.items.map(item => ({
+      _id: item._id,
+      productId: item.productId ? item.productId.toString() : null,
+      name: item.name,
+      price: item.price,
+      quantity: item.quantity,
+      imageUrl: item.imageUrl,
+      category: item.category,
+      weight: item.weight
+    })),
+    totalItems: cart.totalItems,
+    subtotal: cart.subtotal,
+    shipping: cart.shipping,
+    tax: cart.tax,
+    total: cart.total
+  }
+});
     
   } catch (error) {
     console.error('Error updating cart:', error);
@@ -204,16 +244,27 @@ exports.removeFromCart = async (req, res) => {
     
     await cart.save();
     
-    res.json({
-      success: true,
-      message: 'Item removed from cart',
-      cart: {
-        totalItems: cart.totalItems,
-        subtotal: cart.subtotal,
-        total: cart.total,
-        items: cart.items
-      }
-    });
+   res.json({
+  success: true,
+  message: 'Item removed from cart',
+  cart: {
+    items: cart.items.map(item => ({
+      _id: item._id,
+      productId: item.productId ? item.productId.toString() : null,
+      name: item.name,
+      price: item.price,
+      quantity: item.quantity,
+      imageUrl: item.imageUrl,
+      category: item.category,
+      weight: item.weight
+    })),
+    totalItems: cart.totalItems,
+    subtotal: cart.subtotal,
+    shipping: cart.shipping,
+    tax: cart.tax,
+    total: cart.total
+  }
+});
     
   } catch (error) {
     console.error('Error removing from cart:', error);

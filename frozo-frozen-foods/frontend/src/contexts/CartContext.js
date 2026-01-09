@@ -5,19 +5,37 @@ const CartContext = createContext();
 
 export const useCart = () => useContext(CartContext);
 
+// Helper to normalize cart data
+const normalizeCartData = (cartData) => {
+  if (!cartData) return { items: [], totalItems: 0, subtotal: 0, shipping: 0, tax: 0, total: 0 };
+  
+  const normalizedItems = (cartData.items || []).map(item => ({
+    ...item,
+    // Ensure productId is always a string
+    productId: item.productId 
+      ? (typeof item.productId === 'object' ? item.productId.toString() : String(item.productId))
+      : item._id ? item._id.toString() : '',
+    // Ensure all numeric fields are numbers
+    price: parseFloat(item.price || 0),
+    quantity: parseInt(item.quantity || 1)
+  }));
+  
+  return {
+    items: normalizedItems,
+    totalItems: parseInt(cartData.totalItems || 0),
+    subtotal: parseFloat(cartData.subtotal || 0),
+    shipping: parseFloat(cartData.shipping || 0),
+    tax: parseFloat(cartData.tax || 0),
+    total: parseFloat(cartData.total || 0)
+  };
+};
+
 export const CartProvider = ({ children }) => {
-  const [cart, setCart] = useState({
-  items: [],
-  totalItems: 0,
-  subtotal: 0,
-  shipping: 0,
-  tax: 0,
-  total: 0
-});
+  const [cart, setCart] = useState(normalizeCartData({}));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Get user ID (for demo, use localStorage or generate a unique ID)
+  // Get user ID
   const getUserId = () => {
     let userId = localStorage.getItem('frozo_userId');
     if (!userId) {
@@ -29,47 +47,26 @@ export const CartProvider = ({ children }) => {
 
   // Fetch cart from API
   const fetchCart = async () => {
-  try {
-    setLoading(true);
-    const userId = getUserId();
-    const response = await API.get(`/cart/${userId}`);
-    
-    if (response.data.success && response.data.cart) {
-      const cartData = response.data.cart;
-      setCart({
-        items: cartData.items || [],
-        totalItems: cartData.totalItems || 0,
-        subtotal: cartData.subtotal || 0,
-        shipping: cartData.shipping || 0,
-        tax: cartData.tax || 0,
-        total: cartData.total || 0
-      });
-    } else {
-      // If no cart exists, use defaults
-      setCart({
-        items: [],
-        totalItems: 0,
-        subtotal: 0,
-        shipping: 0,
-        tax: 0,
-        total: 0
-      });
+    try {
+      setLoading(true);
+      setError('');
+      const userId = getUserId();
+      const response = await API.get(`/cart/${userId}`);
+      
+      if (response.data.success) {
+        const normalizedCart = normalizeCartData(response.data.cart);
+        setCart(normalizedCart);
+      } else {
+        setCart(normalizeCartData({}));
+      }
+    } catch (err) {
+      console.error('Error fetching cart:', err);
+      setCart(normalizeCartData({}));
+      setError('Failed to load cart');
+    } finally {
+      setLoading(false);
     }
-  } catch (err) {
-    console.error('Error fetching cart:', err);
-    // Use defaults on error
-    setCart({
-      items: [],
-      totalItems: 0,
-      subtotal: 0,
-      shipping: 0,
-      tax: 0,
-      total: 0
-    });
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   // Add item to cart
   const addToCart = async (product, quantity = 1) => {
@@ -77,29 +74,17 @@ export const CartProvider = ({ children }) => {
       setLoading(true);
       const userId = getUserId();
       
+      const productId = product._id ? product._id.toString() : '';
+      
       const response = await API.post('/cart/add', {
         userId,
-        productId: product._id,
+        productId,
         quantity
       });
 
       if (response.data.success) {
-        // setCart({
-        //   items: response.data.cart.items,
-        //   totalItems: response.data.cart.totalItems,
-        //   subtotal: response.data.cart.subtotal,
-        //   shipping: response.data.cart.shipping,
-        //   tax: response.data.cart.tax,
-        //   total: response.data.cart.total
-        // });
-        setCart({
-  items: response.data.cart.items || [],
-  totalItems: response.data.cart.totalItems || 0,
-  subtotal: response.data.cart.subtotal || 0,
-  shipping: response.data.cart.shipping || 0,
-  tax: response.data.cart.tax || parseFloat(((response.data.cart.subtotal || 0) * 0.08).toFixed(2)), // Calculate if missing
-  total: response.data.cart.total || 0
-});
+        const normalizedCart = normalizeCartData(response.data.cart);
+        setCart(normalizedCart);
         return { success: true };
       }
       return { success: false, error: response.data.error };
@@ -117,25 +102,14 @@ export const CartProvider = ({ children }) => {
       setLoading(true);
       const userId = getUserId();
       
-      const response = await API.put(`/cart/${userId}/item/${productId}`, { quantity });
+      // Ensure productId is a string
+      const productIdStr = productId ? productId.toString() : '';
+      
+      const response = await API.put(`/cart/${userId}/item/${productIdStr}`, { quantity });
 
       if (response.data.success) {
-        // setCart({
-        //   items: response.data.cart.items,
-        //   totalItems: response.data.cart.totalItems,
-        //   subtotal: response.data.cart.subtotal,
-        //   shipping: response.data.cart.shipping,
-        //   tax: response.data.cart.tax,
-        //   total: response.data.cart.total
-        // });
-        setCart({
-  items: response.data.cart.items || [],
-  totalItems: response.data.cart.totalItems || 0,
-  subtotal: response.data.cart.subtotal || 0,
-  shipping: response.data.cart.shipping || 0,
-  tax: response.data.cart.tax || parseFloat(((response.data.cart.subtotal || 0) * 0.08).toFixed(2)), // Calculate if missing
-  total: response.data.cart.total || 0
-});
+        const normalizedCart = normalizeCartData(response.data.cart);
+        setCart(normalizedCart);
         return { success: true };
       }
       return { success: false, error: response.data.error };
@@ -153,25 +127,14 @@ export const CartProvider = ({ children }) => {
       setLoading(true);
       const userId = getUserId();
       
-      const response = await API.delete(`/cart/${userId}/item/${productId}`);
+      // Ensure productId is a string
+      const productIdStr = productId ? productId.toString() : '';
+      
+      const response = await API.delete(`/cart/${userId}/item/${productIdStr}`);
 
       if (response.data.success) {
-        // setCart({
-        //   items: response.data.cart.items,
-        //   totalItems: response.data.cart.totalItems,
-        //   subtotal: response.data.cart.subtotal,
-        //   shipping: response.data.cart.shipping,
-        //   tax: response.data.cart.tax,
-        //   total: response.data.cart.total
-        // });
-        setCart({
-  items: response.data.cart.items || [],
-  totalItems: response.data.cart.totalItems || 0,
-  subtotal: response.data.cart.subtotal || 0,
-  shipping: response.data.cart.shipping || 0,
-  tax: response.data.cart.tax || parseFloat(((response.data.cart.subtotal || 0) * 0.08).toFixed(2)), // Calculate if missing
-  total: response.data.cart.total || 0
-});
+        const normalizedCart = normalizeCartData(response.data.cart);
+        setCart(normalizedCart);
         return { success: true };
       }
       return { success: false, error: response.data.error };
@@ -192,14 +155,7 @@ export const CartProvider = ({ children }) => {
       const response = await API.delete(`/cart/${userId}/clear`);
 
       if (response.data.success) {
-        setCart({
-          items: [],
-          totalItems: 0,
-          subtotal: 0,
-          shipping: 0,
-          tax: 0,
-          total: 0
-        });
+        setCart(normalizeCartData({}));
         return { success: true };
       }
       return { success: false, error: response.data.error };
@@ -211,19 +167,24 @@ export const CartProvider = ({ children }) => {
     }
   };
 
-  // Calculate item total
-  const getItemTotal = (price, quantity) => {
-    return (price * quantity).toFixed(2);
-  };
-
   // Check if item is in cart
   const isInCart = (productId) => {
-    return cart.items.some(item => item.productId === productId);
+    if (!productId) return false;
+    const productIdStr = productId.toString();
+    return cart.items.some(item => {
+      const itemProductId = item.productId ? item.productId.toString() : '';
+      return itemProductId === productIdStr;
+    });
   };
 
   // Get item quantity in cart
   const getItemQuantity = (productId) => {
-    const item = cart.items.find(item => item.productId === productId);
+    if (!productId) return 0;
+    const productIdStr = productId.toString();
+    const item = cart.items.find(item => {
+      const itemProductId = item.productId ? item.productId.toString() : '';
+      return itemProductId === productIdStr;
+    });
     return item ? item.quantity : 0;
   };
 
@@ -240,7 +201,6 @@ export const CartProvider = ({ children }) => {
     updateQuantity,
     removeFromCart,
     clearCart,
-    getItemTotal,
     isInCart,
     getItemQuantity,
     refreshCart: fetchCart

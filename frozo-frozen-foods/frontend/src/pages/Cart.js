@@ -47,17 +47,44 @@ const Cart = () => {
   const tax = cart?.tax || 0;
   const total = cart?.total || 0;
 
-  const handleQuantityChange = async (productId, newQuantity) => {
-    if (newQuantity < 1) return;
+  // const handleQuantityChange = async (productId, newQuantity) => {
+  //   if (newQuantity < 1) return;
     
-    setUpdatingItem(productId);
-    await updateQuantity(productId, newQuantity);
-    setUpdatingItem(null);
-  };
+  //   setUpdatingItem(productId);
+  //   await updateQuantity(productId, newQuantity);
+  //   setUpdatingItem(null);
+  // };
 
-  const handleRemoveItem = async (productId) => {
-    await removeFromCart(productId);
-  };
+  // const handleRemoveItem = async (productId) => {
+  //   await removeFromCart(productId);
+  // };
+
+  // const handleClearCart = async () => {
+  //   if (window.confirm('Are you sure you want to clear your cart?')) {
+  //     await clearCart();
+  //   }
+  // };
+
+  const handleQuantityChange = async (productId, newQuantity) => {
+  if (newQuantity < 1) return;
+  
+  setUpdatingItem(productId);
+  
+  // Make sure productId is properly formatted
+  const productIdToUse = productId ? productId.toString() : '';
+  
+  await updateQuantity(productIdToUse, newQuantity);
+  setUpdatingItem(null);
+};
+
+const handleRemoveItem = async (productId) => {
+  // Make sure productId is properly formatted
+  const productIdToUse = productId ? productId.toString() : '';
+  
+  await removeFromCart(productIdToUse);
+};
+
+
 
   const handleClearCart = async () => {
     if (window.confirm('Are you sure you want to clear your cart?')) {
@@ -162,82 +189,68 @@ const Cart = () => {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {cartItems.map((item) => (
-                    <TableRow key={item.productId || item._id} hover>
-                      <TableCell>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                          <Box
-                            component="img"
-                            src={item.imageUrl || 'https://via.placeholder.com/60x60'}
-                            alt={item.name}
-                            sx={{ width: 60, height: 60, borderRadius: 1, objectFit: 'cover' }}
-                          />
-                          <Box>
-                            <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                              {item.name || 'Product'}
-                            </Typography>
-                            <Chip
-                              label={item.category || 'Category'}
-                              size="small"
-                              sx={{ mt: 0.5, fontSize: '0.7rem', height: 20 }}
-                            />
-                            <Typography variant="caption" color="text.secondary" display="block">
-                              {item.weight || 'Weight'}
-                            </Typography>
-                          </Box>
-                        </Box>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                          ${(item.price || 0).toFixed(2)}
-                        </Typography>
-                      </TableCell>
-                      <TableCell align="center">
-                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <IconButton
-                            size="small"
-                            onClick={() => handleQuantityChange(item.productId, (item.quantity || 1) - 1)}
-                            disabled={(item.quantity || 1) <= 1 || updatingItem === item.productId}
-                          >
-                            <RemoveIcon fontSize="small" />
-                          </IconButton>
-                          <TextField
-                            size="small"
-                            value={item.quantity || 1}
-                            onChange={(e) => handleQuantityChange(item.productId, parseInt(e.target.value) || 1)}
-                            disabled={updatingItem === item.productId}
-                            sx={{ width: 60, mx: 1 }}
-                            inputProps={{ 
-                              style: { textAlign: 'center' },
-                              min: 1
-                            }}
-                          />
-                          <IconButton
-                            size="small"
-                            onClick={() => handleQuantityChange(item.productId, (item.quantity || 1) + 1)}
-                            disabled={updatingItem === item.productId}
-                          >
-                            <AddIcon fontSize="small" />
-                          </IconButton>
-                        </Box>
-                      </TableCell>
-                      <TableCell align="right">
-                        <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'primary.main' }}>
-                          ${((item.price || 0) * (item.quantity || 1)).toFixed(2)}
-                        </Typography>
-                      </TableCell>
-                      <TableCell align="center">
-                        <IconButton
-                          size="small"
-                          color="error"
-                          onClick={() => handleRemoveItem(item.productId)}
-                          disabled={updatingItem === item.productId}
-                        >
-                          <DeleteIcon fontSize="small" />
-                        </IconButton>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {cartItems.map((item) => {
+  // Get the correct product ID
+  const itemProductId = item.productId || item._id;
+  const itemIdStr = itemProductId ? itemProductId.toString() : '';
+  
+  return (
+    <TableRow key={itemIdStr} hover>
+      <TableCell>
+        {/* ... item display ... */}
+      </TableCell>
+      <TableCell>
+        <Typography variant="body2" sx={{ fontWeight: 500 }}>
+          ${(item.price || 0).toFixed(2)}
+        </Typography>
+      </TableCell>
+      <TableCell align="center">
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <IconButton
+            size="small"
+            onClick={() => handleQuantityChange(itemIdStr, (item.quantity || 1) - 1)}
+            disabled={(item.quantity || 1) <= 1 || updatingItem === itemIdStr}
+          >
+            <RemoveIcon fontSize="small" />
+          </IconButton>
+          <TextField
+            size="small"
+            value={item.quantity || 1}
+            onChange={(e) => handleQuantityChange(itemIdStr, parseInt(e.target.value) || 1)}
+            disabled={updatingItem === itemIdStr}
+            sx={{ width: 60, mx: 1 }}
+            inputProps={{ 
+              style: { textAlign: 'center' },
+              min: 1
+            }}
+          />
+          <IconButton
+            size="small"
+            onClick={() => handleQuantityChange(itemIdStr, (item.quantity || 1) + 1)}
+            disabled={updatingItem === itemIdStr}
+          >
+            <AddIcon fontSize="small" />
+          </IconButton>
+        </Box>
+      </TableCell>
+      <TableCell align="right">
+        <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'primary.main' }}>
+          ${((item.price || 0) * (item.quantity || 1)).toFixed(2)}
+        </Typography>
+      </TableCell>
+      <TableCell align="center">
+        <IconButton
+          size="small"
+          color="error"
+          onClick={() => handleRemoveItem(itemIdStr)}
+          disabled={updatingItem === itemIdStr}
+        >
+          <DeleteIcon fontSize="small" />
+        </IconButton>
+      </TableCell>
+    </TableRow>
+  );
+})}
                 </TableBody>
               </Table>
             </TableContainer>
