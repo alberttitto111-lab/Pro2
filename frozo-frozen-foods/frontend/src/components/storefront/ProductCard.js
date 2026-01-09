@@ -1,16 +1,30 @@
 import React from 'react';
-import { Card, CardContent, CardMedia, Typography, Box, Rating, Chip } from '@mui/material';
+import { Card, CardContent, CardMedia, Typography, Box, Rating, Chip, Button } from '@mui/material';
+import AddShoppingCartIcon from '@mui/icons-material/AddShoppingCart';
+import { useCart } from '../../contexts/CartContext';
 
 const ProductCard = ({ product }) => {
+  const { addToCart, isInCart, getItemQuantity } = useCart();
+  const quantityInCart = getItemQuantity(product._id);
+
+  const handleAddToCart = async (e) => {
+    e.stopPropagation(); // Prevent card click
+    await addToCart(product, 1);
+  };
+
   return (
-    <Card className="product-card" sx={{ 
+    <Card className="product-card" sx={{
       height: '100%',
-      display: 'flex', 
+      display: 'flex',
       flexDirection: 'column',
       borderRadius: 1.5,
       overflow: 'hidden',
       transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
       boxShadow: '0 1px 4px rgba(0,0,0,0.08)',
+      '&:hover': {
+        transform: 'translateY(-4px)',
+        boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+      }
     }}>
       {/* Product Image */}
       <CardMedia
@@ -18,41 +32,40 @@ const ProductCard = ({ product }) => {
         height="140"
         image={product.imageUrl || 'https://via.placeholder.com/300x140'}
         alt={product.name}
-        sx={{ 
+        sx={{
           objectFit: 'cover',
           transition: 'transform 0.3s ease',
         }}
       />
-      
-      <CardContent sx={{ 
-        flexGrow: 1, 
+      <CardContent sx={{
+        flexGrow: 1,
         p: 1.5,
         display: 'flex',
         flexDirection: 'column'
       }}>
-        {/* Category Chip - Smaller */}
+        {/* Category Chip */}
         <Box sx={{ mb: 0.75 }}>
-          <Chip 
-            label={product.category} 
-            size="small" 
+          <Chip
+            label={product.category}
+            size="small"
             color={
               product.category === 'Vegetables' ? 'success' :
               product.category === 'Fruits' ? 'warning' :
               product.category === 'Snacks' ? 'info' : 'error'
             }
-            sx={{ 
-              height: 20, 
+            sx={{
+              height: 20,
               fontSize: '0.65rem',
               fontWeight: 600,
               px: 0.5
             }}
           />
         </Box>
-        
-        {/* Product Name - Compact */}
-        <Typography 
-          variant="subtitle2" 
-          sx={{ 
+
+        {/* Product Name */}
+        <Typography
+          variant="subtitle2"
+          sx={{
             fontWeight: 600,
             fontSize: '0.85rem',
             lineHeight: 1.2,
@@ -67,42 +80,67 @@ const ProductCard = ({ product }) => {
         >
           {product.name}
         </Typography>
-        
-        {/* Weight - Smaller */}
-        <Typography variant="caption" color="text.secondary" sx={{ 
-          mb: 1, 
+
+        {/* Weight */}
+        <Typography variant="caption" color="text.secondary" sx={{
+          mb: 1,
           display: 'block',
           fontSize: '0.7rem'
         }}>
           {product.weight}
         </Typography>
-        
-        {/* Rating - Smaller */}
+
+        {/* Rating */}
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.25 }}>
-          <Rating 
-            value={product.rating} 
-            readOnly 
-            precision={0.5} 
+          <Rating
+            value={product.rating}
+            readOnly
+            precision={0.5}
             size="small"
             sx={{ fontSize: '0.9rem' }}
           />
-          <Typography variant="caption" color="text.secondary" sx={{ 
+          <Typography variant="caption" color="text.secondary" sx={{
             ml: 0.75,
             fontSize: '0.7rem'
           }}>
             {product.rating.toFixed(1)}
           </Typography>
         </Box>
-        
-        {/* Price - Takes remaining space */}
-        <Box sx={{ mt: 'auto' }}>
-          <Typography variant="h6" color="primary" sx={{ 
-            fontWeight: 800, 
+
+        {/* Price */}
+        <Box sx={{ mb: 2 }}>
+          <Typography variant="h6" color="primary" sx={{
+            fontWeight: 800,
             fontSize: '1.1rem',
             lineHeight: 1
           }}>
-            ${product.price.toFixed(2)}
+            ${(product.price || 0).toFixed(2)}
           </Typography>
+        </Box>
+
+        {/* Add to Cart Button */}
+        <Box sx={{ mt: 'auto' }}>
+          <Button
+            variant="contained"
+            color="primary"
+            size="small"
+            fullWidth
+            startIcon={<AddShoppingCartIcon />}
+            onClick={handleAddToCart}
+            sx={{
+              py: 0.5,
+              fontSize: '0.75rem',
+              fontWeight: 600,
+              borderRadius: 1,
+              textTransform: 'none',
+              bgcolor: isInCart(product._id) ? 'success.main' : 'primary.main',
+              '&:hover': {
+                bgcolor: isInCart(product._id) ? 'success.dark' : 'primary.dark',
+              }
+            }}
+          >
+            {isInCart(product._id) ? `Added (${quantityInCart})` : 'Add to Cart'}
+          </Button>
         </Box>
       </CardContent>
     </Card>

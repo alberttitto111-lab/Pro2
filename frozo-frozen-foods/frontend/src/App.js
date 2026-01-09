@@ -1,4 +1,4 @@
-import React, { useContext } from 'react'; // Make sure useContext is imported here
+import React, { useContext } from 'react'; //  useContext is imported here
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
@@ -9,12 +9,15 @@ import Home from './pages/Home';
 import Products from './pages/Products';
 import ProductDetailPage from './pages/ProductDetailPage';
 import Admin from './pages/Admin';
-import Notifications from './pages/Notifications'; // Make sure this is imported
+import Notifications from './pages/Notifications'; 
 import AdminHeader from './components/admin/AdminHeader';
 import LoginDialog from './components/auth/LoginDialog';
 import About from './pages/About';
 import Contact from './pages/Contact';
-import ScrollToTop from './components/common/ScrollToTop'; // Add this import
+import ScrollToTop from './components/common/ScrollToTop'; 
+
+import { CartProvider } from './contexts/CartContext';
+import Cart from './pages/Cart';
 
 
 // Create auth context
@@ -193,6 +196,11 @@ const AppContent = () => {
             <Contact />
           </Layout>
         } />
+        <Route path="/cart" element={
+          <Layout>
+            <Cart />
+          </Layout>
+        } />
 
         {/* Protected Admin routes */}
         <Route path="/admin" element={
@@ -306,9 +314,11 @@ function App() {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <AuthContext.Provider value={authContextValue}>
-        <Router>
-          <AppContent />
-        </Router>
+        <CartProvider> {/* CartProvider added here */}
+          <Router>
+            <AppContent />
+          </Router>
+        </CartProvider>
       </AuthContext.Provider>
     </ThemeProvider>
   );

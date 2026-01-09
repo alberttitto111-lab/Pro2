@@ -7,6 +7,9 @@ const adminRoutes = require('./routes/adminRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const testRoutes = require('./routes/testRoutes');
 
+const cartRoutes = require('./routes/cartRoutes');
+
+
 dotenv.config();
 
 const app = express();
@@ -79,6 +82,10 @@ app.use('/api/products', productRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/notifications', notificationRoutes); 
 app.use('/api/test', testRoutes);
+
+app.use('/api/cart', cartRoutes);
+
+// console.log(`🛒 Cart API: http://localhost:${PORT}/api/cart`);
 
 
 // 404 handler
