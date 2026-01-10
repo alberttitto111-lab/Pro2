@@ -40,11 +40,13 @@ const Wishlist = () => {
   const wishlistItems = wishlist?.items || [];
   const itemCount = wishlist?.itemCount || 0;
 
-  const handleRemoveFromWishlist = async (productId) => {
+  const handleRemoveFromWishlist = async (productId, productName) => {
     setProcessingItem(productId);
     const result = await removeFromWishlist(productId);
     if (result.success) {
-      showSnackbar('Removed from wishlist', 'info');
+      showSnackbar(`"${productName}" removed from wishlist`, 'info');
+    } else {
+      showSnackbar(result.error || 'Failed to remove from wishlist', 'error');
     }
     setProcessingItem(null);
   };
@@ -53,7 +55,7 @@ const Wishlist = () => {
     setProcessingItem(product.productId);
     const result = await addToCart(product, 1);
     if (result.success) {
-      showSnackbar('Added to cart!', 'success');
+      showSnackbar(`"${product.name}" added to cart!`, 'success');
     } else {
       showSnackbar(result.error || 'Failed to add to cart', 'error');
     }
@@ -64,9 +66,15 @@ const Wishlist = () => {
     if (window.confirm('Are you sure you want to clear your wishlist?')) {
       const result = await clearWishlist();
       if (result.success) {
-        showSnackbar('Wishlist cleared', 'info');
+        showSnackbar('Wishlist cleared successfully', 'info');
+      } else {
+        showSnackbar(result.error || 'Failed to clear wishlist', 'error');
       }
     }
+  };
+
+  const handleViewProduct = (productId) => {
+    navigate(`/products/${productId}`);
   };
 
   const showSnackbar = (message, severity) => {
@@ -140,7 +148,7 @@ const Wishlist = () => {
             color="error"
             startIcon={<ClearIcon />}
             onClick={handleClearWishlist}
-            disabled={loading}
+            disabled={loading || wishlistItems.length === 0}
           >
             Clear Wishlist
           </Button>
@@ -155,132 +163,183 @@ const Wishlist = () => {
 
       {/* Wishlist Items Grid */}
       <Grid container spacing={3}>
-        {wishlistItems.map((item) => (
-          <Grid item xs={12} sm={6} md={4} lg={3} key={item.productId || item._id}>
-            <Card sx={{ 
-              height: '100%',
-              display: 'flex',
-              flexDirection: 'column',
-              borderRadius: 2,
-              overflow: 'hidden',
-              transition: 'transform 0.2s, box-shadow 0.2s',
-              '&:hover': {
-                transform: 'translateY(-4px)',
-                boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
-              }
-            }}>
-              {/* Product Image */}
-              <CardMedia
-                component="img"
-                height="160"
-                image={item.imageUrl || 'https://via.placeholder.com/300x160'}
-                alt={item.name}
-                sx={{ objectFit: 'cover' }}
-              />
+        {wishlistItems.map((item) => {
+          const itemId = item.productId || item._id;
+          const isProcessing = processingItem === itemId;
 
-              <CardContent sx={{ flexGrow: 1, p: 2 }}>
-                {/* Category Chip */}
-                <Box sx={{ mb: 1 }}>
-                  <Chip
-                    label={item.category}
-                    size="small"
-                    color={
-                      item.category === 'Vegetables' ? 'success' :
-                      item.category === 'Fruits' ? 'warning' :
-                      item.category === 'Snacks' ? 'info' : 'error'
-                    }
-                    sx={{ fontSize: '0.7rem', height: 20 }}
-                  />
-                </Box>
-
-                {/* Product Name */}
-                <Typography
-                  variant="subtitle1"
-                  sx={{
-                    fontWeight: 600,
-                    fontSize: '0.95rem',
-                    lineHeight: 1.3,
-                    mb: 1,
-                    minHeight: '2.5rem',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    display: '-webkit-box',
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: 'vertical',
-                  }}
-                >
-                  {item.name}
-                </Typography>
-
-                {/* Weight */}
-                <Typography variant="caption" color="text.secondary" sx={{ mb: 1.5, display: 'block' }}>
-                  {item.weight}
-                </Typography>
-
-                {/* Rating */}
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
-                  <Rating
-                    value={item.rating || 0}
-                    readOnly
-                    precision={0.5}
-                    size="small"
-                  />
-                  <Typography variant="caption" color="text.secondary" sx={{ ml: 1 }}>
-                    {item.rating?.toFixed(1) || '0.0'} ({item.reviewCount || 0})
-                  </Typography>
-                </Box>
-
-                {/* Price */}
-                <Typography variant="h6" color="primary" sx={{ fontWeight: 800 }}>
-                  ${(item.price || 0).toFixed(2)}
-                </Typography>
-              </CardContent>
-
-              <CardActions sx={{ p: 2, pt: 0, gap: 1 }}>
-                <Button
-                  variant="contained"
-                  color="primary"
-                  size="small"
-                  fullWidth
-                  startIcon={<AddCartIcon />}
-                  onClick={() => handleAddToCart(item)}
-                  disabled={processingItem === item.productId}
+          return (
+            <Grid item xs={12} sm={6} md={4} lg={3} key={itemId}>
+              <Card sx={{ 
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                borderRadius: 2,
+                overflow: 'hidden',
+                transition: 'transform 0.2s, box-shadow 0.2s',
+                '&:hover': {
+                  transform: 'translateY(-4px)',
+                  boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+                }
+              }}>
+                {/* Product Image with Click to View */}
+                <Box 
                   sx={{ 
-                    py: 0.75,
-                    fontSize: '0.8rem',
-                    fontWeight: 600,
-                    borderRadius: 1
+                    cursor: 'pointer',
+                    position: 'relative',
+                    overflow: 'hidden'
                   }}
+                  onClick={() => handleViewProduct(itemId)}
                 >
-                  Add to Cart
-                </Button>
-                <IconButton
-                  color="error"
-                  size="small"
-                  onClick={() => handleRemoveFromWishlist(item.productId)}
-                  disabled={processingItem === item.productId}
-                  sx={{
-                    border: '1px solid',
-                    borderColor: 'error.main',
-                    borderRadius: 1
-                  }}
-                >
-                  <DeleteIcon fontSize="small" />
-                </IconButton>
-              </CardActions>
-            </Card>
-          </Grid>
-        ))}
+                  <CardMedia
+                    component="img"
+                    height="160"
+                    image={item.imageUrl || 'https://via.placeholder.com/300x160'}
+                    alt={item.name}
+                    sx={{ 
+                      objectFit: 'cover',
+                      transition: 'transform 0.3s ease',
+                      '&:hover': {
+                        transform: 'scale(1.05)'
+                      }
+                    }}
+                  />
+                  {/* Category Badge */}
+                  <Box sx={{ position: 'absolute', top: 10, left: 10 }}>
+                    <Chip
+                      label={item.category}
+                      size="small"
+                      color={
+                        item.category === 'Vegetables' ? 'success' :
+                        item.category === 'Fruits' ? 'warning' :
+                        item.category === 'Snacks' ? 'info' : 'error'
+                      }
+                      sx={{ 
+                        fontSize: '0.7rem', 
+                        height: 22,
+                        fontWeight: 600,
+                        backdropFilter: 'blur(4px)',
+                        backgroundColor: 'rgba(205, 62, 148, 0.9)', 
+                        color: '#fff'
+                      }}
+                    />
+                  </Box>
+                </Box>
+
+                <CardContent sx={{ flexGrow: 1, p: 2 }}>
+                  {/* Product Name (Clickable) */}
+                  <Typography
+                    variant="subtitle1"
+                    sx={{
+                      fontWeight: 600,
+                      fontSize: '0.95rem',
+                      lineHeight: 1.3,
+                      mb: 1,
+                      minHeight: '2.5rem',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      display: '-webkit-box',
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: 'vertical',
+                      cursor: 'pointer',
+                      '&:hover': {
+                        color: 'primary.main'
+                      }
+                    }}
+                    onClick={() => handleViewProduct(itemId)}
+                  >
+                    {item.name}
+                  </Typography>
+
+                  {/* Weight */}
+                  <Typography variant="caption" color="text.secondary" sx={{ mb: 1.5, display: 'block' }}>
+                    {item.weight}
+                  </Typography>
+
+                  {/* Rating */}
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
+                    <Rating
+                      value={item.rating || 0}
+                      readOnly
+                      precision={0.5}
+                      size="small"
+                    />
+                    <Typography variant="caption" color="text.secondary" sx={{ ml: 1 }}>
+                      {item.rating?.toFixed(1) || '0.0'} ({item.reviewCount || 0})
+                    </Typography>
+                  </Box>
+
+                  {/* Price */}
+                  <Typography variant="h6" color="primary" sx={{ fontWeight: 800 }}>
+                    ${(item.price || 0).toFixed(2)}
+                  </Typography>
+                </CardContent>
+
+                <CardActions sx={{ p: 2, pt: 0, gap: 1 }}>
+                  {/* Add to Cart Button */}
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    size="small"
+                    fullWidth
+                    startIcon={isProcessing ? <CircularProgress size={16} /> : <AddCartIcon />}
+                    onClick={() => handleAddToCart(item)}
+                    disabled={isProcessing}
+                    sx={{ 
+                      py: 0.75,
+                      fontSize: '0.8rem',
+                      fontWeight: 600,
+                      borderRadius: 1,
+                      minHeight: '36px'
+                    }}
+                  >
+                    {isProcessing ? 'Adding...' : 'Add to Cart'}
+                  </Button>
+                  
+                  {/* Delete Button */}
+                  <IconButton
+                    color="error"
+                    size="small"
+                    onClick={() => handleRemoveFromWishlist(itemId, item.name)}
+                    disabled={isProcessing}
+                    sx={{
+                      border: '1px solid',
+                      borderColor: 'error.main',
+                      borderRadius: 1,
+                      minWidth: '36px',
+                      minHeight: '36px',
+                      '&:hover': {
+                        backgroundColor: 'error.light',
+                        color: 'error.dark'
+                      }
+                    }}
+                    title="Remove from wishlist"
+                  >
+                    {isProcessing ? <CircularProgress size={16} /> : <DeleteIcon fontSize="small" />}
+                  </IconButton>
+                </CardActions>
+              </Card>
+            </Grid>
+          );
+        })}
       </Grid>
 
       {/* Snackbar for notifications */}
       <Snackbar
         open={snackbar.open}
-        autoHideDuration={3000}
+        autoHideDuration={4000}
         onClose={handleCloseSnackbar}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
       >
-        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
+        <Alert 
+          onClose={handleCloseSnackbar} 
+          severity={snackbar.severity} 
+          sx={{ 
+            width: '100%',
+            '& .MuiAlert-message': {
+              fontSize: '0.9rem'
+            }
+          }}
+        >
           {snackbar.message}
         </Alert>
       </Snackbar>

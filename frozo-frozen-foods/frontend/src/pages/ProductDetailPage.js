@@ -8,16 +8,13 @@ import {
   Paper,
   Rating,
   Chip,
-  IconButton,
-  Card,
-  CardMedia,
-  CardContent,
-  CardActions
+  IconButton
 } from '@mui/material';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { getProductById, getProducts } from '../services/api'; // Added getProducts import
+import { getProductById, getProducts } from '../services/api';
 import { useCart } from '../contexts/CartContext';
 import { useWishlist } from '../contexts/WishlistContext';
+import ProductCard from '../components/storefront/ProductCard'; // Import ProductCard
 import AddShoppingCartIcon from '@mui/icons-material/AddShoppingCart';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
@@ -28,7 +25,8 @@ const ProductDetailPage = () => {
   const [product, setProduct] = React.useState(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState('');
-  const [relatedProducts, setRelatedProducts] = React.useState([]); // Moved hook to top level
+  const [relatedProducts, setRelatedProducts] = React.useState([]);
+  const [relatedLoading, setRelatedLoading] = React.useState(false);
   
   const { addToCart, isInCart, getItemQuantity } = useCart();
   const { toggleWishlist, isInWishlist } = useWishlist();
@@ -71,15 +69,18 @@ const ProductDetailPage = () => {
       if (!product) return;
       
       try {
+        setRelatedLoading(true);
         const response = await getProducts();
         if (response.data && response.data.success) {
           const related = response.data.products
             .filter(p => p.category === product.category && p._id !== product._id)
-            .slice(0, 4); // Show max 4 related products
+            .slice(0, 6); // Show max 6 related products (matches home page grid)
           setRelatedProducts(related);
         }
       } catch (err) {
         console.error('Error fetching related products:', err);
+      } finally {
+        setRelatedLoading(false);
       }
     };
     
@@ -104,6 +105,10 @@ const ProductDetailPage = () => {
     if (result.success) {
       // Optional: Show success message
     }
+  };
+
+  const handleRelatedProductClick = (productId) => {
+    navigate(`/products/${productId}`);
   };
 
   if (loading) {
@@ -273,51 +278,61 @@ const ProductDetailPage = () => {
         </Grid>
       </Grid>
 
-      {/* Related Products Section */}
+      {/* Related Products Section - Using ProductCard component */}
       {relatedProducts.length > 0 && (
         <Box sx={{ mt: 8 }}>
-          <Typography variant="h5" gutterBottom>
+          <Typography variant="h5" gutterBottom sx={{ 
+            fontWeight: 800,
+            fontSize: { xs: '1.5rem', sm: '1.75rem', md: '2rem' },
+            color: '#1a237e',
+            mb: 1
+          }}>
             More {product.category} You Might Like
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
             Other products in the {product.category} category
           </Typography>
-          <Grid container spacing={2}>
-            {relatedProducts.map((relatedProduct) => (
-              <Grid item xs={6} sm={4} md={3} key={relatedProduct._id}>
-                <Card sx={{ height: '100%' }}>
-                  <CardMedia
-                    component="img"
-                    height="120"
-                    image={relatedProduct.imageUrl || 'https://via.placeholder.com/300x120'}
-                    alt={relatedProduct.name}
-                  />
-                  <CardContent>
-                    <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 600 }}>
-                      {relatedProduct.name}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                      {relatedProduct.weight}
-                    </Typography>
-                    <Typography variant="h6" color="primary">
-                      ${relatedProduct.price.toFixed(2)}
-                    </Typography>
-                  </CardContent>
-                  <CardActions>
-                    <Button
-                      size="small"
-                      color="primary"
-                      component={Link}
-                      to={`/products/${relatedProduct._id}`}
-                      fullWidth
-                    >
-                      View Details
-                    </Button>
-                  </CardActions>
-                </Card>
-              </Grid>
-            ))}
-          </Grid>
+          
+          {relatedLoading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+              <Typography variant="h6">Loading related products...</Typography>
+            </Box>
+          ) : (
+            <Grid container spacing={{ xs: 1.5, sm: 2, md: 2.5 }}>
+              {relatedProducts.map((relatedProduct) => (
+                <Grid item key={relatedProduct._id} xs={6} sm={4} md={3} lg={2}>
+                  <Box
+                    onClick={() => handleRelatedProductClick(relatedProduct._id)}
+                    sx={{
+                      cursor: 'pointer',
+                      height: '100%',
+                      '&:hover .product-card': {
+                        transform: 'translateY(-4px)',
+                        boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+                      }
+                    }}
+                  >
+                    <ProductCard product={relatedProduct} />
+                  </Box>
+                </Grid>
+              ))}
+            </Grid>
+          )}
+          
+          {/* View More Button */}
+          {relatedProducts.length >= 6 && (
+            <Box sx={{ textAlign: 'center', mt: 4 }}>
+              <Button
+                component={Link}
+                to={`/products?category=${product.category.toLowerCase().replace(' ', '-')}`}
+                variant="outlined"
+                color="primary"
+                sx={{ px: 4, py: 1.5, borderRadius: 2 }}
+              >
+                View All {product.category}
+              </Button>
+            </Box>
+          )}
         </Box>
       )}
     </Container>

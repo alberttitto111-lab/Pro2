@@ -41,7 +41,7 @@ const Header = () => {
     { label: 'Products', path: '/products' },
     { label: 'About', path: '/about' },
     { label: 'Contact', path: '/contact' },
-    { label: 'Wishlist', path: '/wishlist' },
+    // { label: 'Wishlist', path: '/wishlist' },
     // { label: 'Cart', path: '/cart' }, // Add Cart to menu
   ];
 
