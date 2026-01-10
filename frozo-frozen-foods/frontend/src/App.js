@@ -19,6 +19,9 @@ import ScrollToTop from './components/common/ScrollToTop';
 import { CartProvider } from './contexts/CartContext';
 import Cart from './pages/Cart';
 
+import { WishlistProvider } from './contexts/WishlistContext';
+import Wishlist from './pages/Wishlist';
+
 
 // Create auth context
 export const AuthContext = React.createContext();
@@ -201,6 +204,11 @@ const AppContent = () => {
             <Cart />
           </Layout>
         } />
+        <Route path="/wishlist" element={
+          <Layout>
+            <Wishlist />
+          </Layout>
+        } />
 
         {/* Protected Admin routes */}
         <Route path="/admin" element={
@@ -315,9 +323,11 @@ function App() {
       <CssBaseline />
       <AuthContext.Provider value={authContextValue}>
         <CartProvider> {/* CartProvider added here */}
-          <Router>
-            <AppContent />
-          </Router>
+          <WishlistProvider> {/* Add WishlistProvider here */}
+            <Router>
+              <AppContent />
+            </Router>
+          </WishlistProvider>
         </CartProvider>
       </AuthContext.Provider>
     </ThemeProvider>

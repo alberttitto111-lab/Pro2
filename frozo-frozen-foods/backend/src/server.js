@@ -9,6 +9,8 @@ const testRoutes = require('./routes/testRoutes');
 
 const cartRoutes = require('./routes/cartRoutes');
 
+const wishlistRoutes = require('./routes/wishlistRoutes');
+
 
 dotenv.config();
 
@@ -84,8 +86,11 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/test', testRoutes);
 
 app.use('/api/cart', cartRoutes);
-
 // console.log(`🛒 Cart API: http://localhost:${PORT}/api/cart`);
+
+app.use('/api/wishlist', wishlistRoutes);
+
+// console.log(`❤️  Wishlist API: http://localhost:${PORT}/api/wishlist`);
 
 
 // 404 handler

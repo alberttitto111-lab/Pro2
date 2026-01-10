@@ -15,10 +15,18 @@ import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import { AuthContext } from '../../App';
 import { useCart } from '../../contexts/CartContext'; // Add this import
 
+// Add Wishlist icon import
+import FavoriteIcon from '@mui/icons-material/Favorite';
+import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
+
+import { useWishlist } from '../../contexts/WishlistContext';
+
+
 const Header = () => {
   const navigate = useNavigate();
   const { isAuthenticated, setShowLogin } = useContext(AuthContext);
   const { cart } = useCart(); // Get cart data
+  const { wishlist } = useWishlist(); // Get wishlist data
 
   const handleAdminClick = () => {
     if (isAuthenticated) {
@@ -33,6 +41,7 @@ const Header = () => {
     { label: 'Products', path: '/products' },
     { label: 'About', path: '/about' },
     { label: 'Contact', path: '/contact' },
+    { label: 'Wishlist', path: '/wishlist' },
     // { label: 'Cart', path: '/cart' }, // Add Cart to menu
   ];
 
@@ -72,8 +81,10 @@ const Header = () => {
                   color: 'text.primary',
                   fontSize: { md: '0.9rem', lg: '1rem' },
                   '&:hover': {
-                    color: 'primary.main',
-                    backgroundColor: 'rgba(33, 150, 243, 0.04)'
+                    color: item.label === 'Wishlist' ? 'secondary.main' : 'primary.main',
+                    backgroundColor: item.label === 'Wishlist'  
+                      ? 'rgba(255, 64, 129, 0.04)' 
+                      : 'rgba(33, 150, 243, 0.04)'
                   }
                 }}
                 onClick={() => {
@@ -104,6 +115,20 @@ const Header = () => {
             >
               {isAuthenticated ? 'Admin Panel' : 'Admin'}
             </Button>
+
+            {/* Wishlist Icon with Badge */}
+            <IconButton
+              component={Link}
+              to="/wishlist"
+              color="secondary"
+              size="medium"
+              sx={{ ml: 1 }}
+            >
+              <Badge badgeContent={wishlist.itemCount} color="error">
+                <FavoriteIcon />
+              </Badge>
+            </IconButton>
+
 
             {/* Cart Icon with Badge */}
             <IconButton
