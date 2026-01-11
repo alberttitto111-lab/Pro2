@@ -1,3 +1,5 @@
+// frontend/src/contexts/WishlistContext.js
+
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import API from '../services/api';
 
@@ -8,17 +10,29 @@ export const useWishlist = () => useContext(WishlistContext);
 // Helper to normalize wishlist data
 const normalizeWishlistData = (wishlistData) => {
   if (!wishlistData) return { items: [], itemCount: 0 };
-  
-  const normalizedItems = (wishlistData.items || []).map(item => ({
-    ...item,
-    productId: item.productId 
-      ? (typeof item.productId === 'object' ? item.productId.toString() : String(item.productId))
-      : item._id ? item._id.toString() : '',
-    price: parseFloat(item.price || 0),
-    rating: parseFloat(item.rating || 0),
-    reviewCount: parseInt(item.reviewCount || 0)
-  }));
-  
+
+  const normalizedItems = (wishlistData.items || []).map(item => {
+    // Extract product ID from different possible sources
+    let productId = '';
+    
+    if (item.productId) {
+      productId = typeof item.productId === 'object' 
+        ? (item.productId._id || item.productId.toString())
+        : String(item.productId);
+    } else if (item._id) {
+      productId = item._id.toString();
+    }
+
+    return {
+      ...item,
+      productId: productId || '',
+      _id: item._id || productId, // Ensure _id is always present
+      price: parseFloat(item.price || 0),
+      rating: parseFloat(item.rating || 0),
+      reviewCount: parseInt(item.reviewCount || 0)
+    };
+  });
+
   return {
     items: normalizedItems,
     itemCount: parseInt(wishlistData.itemCount || 0)
@@ -50,6 +64,7 @@ export const WishlistProvider = ({ children }) => {
       
       if (response.data.success) {
         const normalizedWishlist = normalizeWishlistData(response.data.wishlist);
+        console.log('Fetched wishlist items:', normalizedWishlist.items);
         setWishlist(normalizedWishlist);
       } else {
         setWishlist(normalizeWishlistData({}));
@@ -68,8 +83,9 @@ export const WishlistProvider = ({ children }) => {
     try {
       setLoading(true);
       const userId = getUserId();
-      
       const productId = product._id ? product._id.toString() : '';
+      
+      console.log('Adding to wishlist:', { userId, productId, productName: product.name });
       
       const response = await API.post('/wishlist/add', {
         userId,
@@ -78,6 +94,7 @@ export const WishlistProvider = ({ children }) => {
 
       if (response.data.success) {
         const normalizedWishlist = normalizeWishlistData(response.data.wishlist);
+        console.log('Wishlist after add:', normalizedWishlist.items);
         setWishlist(normalizedWishlist);
         return { success: true, message: 'Added to wishlist' };
       }
@@ -91,15 +108,35 @@ export const WishlistProvider = ({ children }) => {
   };
 
   // Remove item from wishlist
-  const removeFromWishlist = async (productId) => {
+  const removeFromWishlist = async (wishlistItemId) => {
     try {
       setLoading(true);
       const userId = getUserId();
       
-      const productIdStr = productId ? productId.toString() : '';
+      // Ensure wishlistItemId is a string
+      const wishlistItemIdStr = wishlistItemId ? wishlistItemId.toString() : '';
+      console.log('Removing from wishlist:', { userId, wishlistItemId: wishlistItemIdStr });
       
-      const response = await API.delete(`/wishlist/${userId}/item/${productIdStr}`);
-
+      // Find the item in current wishlist to get the correct productId
+      const wishlistItem = wishlist.items.find(item => {
+        const itemProductId = item.productId ? item.productId.toString() : '';
+        const itemId = item._id ? item._id.toString() : '';
+        return itemProductId === wishlistItemIdStr || itemId === wishlistItemIdStr;
+      });
+      
+      if (!wishlistItem) {
+        console.error('Item not found in wishlist:', wishlistItemIdStr);
+        return { success: false, error: 'Item not found in wishlist' };
+      }
+      
+      // Use the productId from the wishlist item
+      const itemProductId = wishlistItem.productId || wishlistItem._id;
+      const finalProductId = itemProductId ? itemProductId.toString() : wishlistItemIdStr;
+      
+      console.log('Actual productId to remove from wishlist:', finalProductId);
+      
+      const response = await API.delete(`/wishlist/${userId}/item/${finalProductId}`);
+      
       if (response.data.success) {
         const normalizedWishlist = normalizeWishlistData(response.data.wishlist);
         setWishlist(normalizedWishlist);
@@ -108,6 +145,7 @@ export const WishlistProvider = ({ children }) => {
       return { success: false, error: response.data.error };
     } catch (err) {
       console.error('Error removing from wishlist:', err);
+      console.error('Error details:', err.response?.data);
       return { success: false, error: 'Failed to remove from wishlist' };
     } finally {
       setLoading(false);
@@ -118,9 +156,11 @@ export const WishlistProvider = ({ children }) => {
   const isInWishlist = (productId) => {
     if (!productId) return false;
     const productIdStr = productId.toString();
+    
     return wishlist.items.some(item => {
       const itemProductId = item.productId ? item.productId.toString() : '';
-      return itemProductId === productIdStr;
+      const itemId = item._id ? item._id.toString() : '';
+      return itemProductId === productIdStr || itemId === productIdStr;
     });
   };
 
@@ -129,7 +169,17 @@ export const WishlistProvider = ({ children }) => {
     const productId = product._id ? product._id.toString() : '';
     
     if (isInWishlist(productId)) {
-      return await removeFromWishlist(productId);
+      // Find the wishlist item to get the correct identifier
+      const wishlistItem = wishlist.items.find(item => {
+        const itemProductId = item.productId ? item.productId.toString() : '';
+        const itemId = item._id ? item._id.toString() : '';
+        return itemProductId === productId || itemId === productId;
+      });
+      
+      if (wishlistItem) {
+        const identifier = wishlistItem._id || wishlistItem.productId;
+        return await removeFromWishlist(identifier);
+      }
     } else {
       return await addToWishlist(product);
     }
@@ -140,9 +190,8 @@ export const WishlistProvider = ({ children }) => {
     try {
       setLoading(true);
       const userId = getUserId();
-      
       const response = await API.delete(`/wishlist/${userId}/clear`);
-
+      
       if (response.data.success) {
         setWishlist(normalizeWishlistData({}));
         return { success: true };

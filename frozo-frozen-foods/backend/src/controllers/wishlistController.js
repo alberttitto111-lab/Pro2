@@ -2,26 +2,45 @@ const Wishlist = require('../models/Wishlist');
 const Product = require('../models/Product');
 
 // Get user's wishlist
+// In the getWishlist function, ensure consistent formatting:
+
 exports.getWishlist = async (req, res) => {
   try {
     const { userId } = req.params;
-    
-    let wishlist = await Wishlist.findOne({ userId }).populate('items.productId');
-    
+    let wishlist = await Wishlist.findOne({ userId }).populate('items.productId', 'name price imageUrl category weight rating reviewCount');
+
     if (!wishlist) {
-      // Create empty wishlist if doesn't exist
       wishlist = new Wishlist({ userId, items: [] });
       await wishlist.save();
     }
-    
+
+    // Ensure consistent productId format
+    const formattedItems = wishlist.items.map(item => {
+      const productInfo = item.productId || {};
+      return {
+        _id: item._id,
+        productId: item.productId ? item.productId._id || item.productId.toString() : null,
+        name: productInfo.name || item.name,
+        price: productInfo.price || item.price,
+        imageUrl: productInfo.imageUrl || item.imageUrl,
+        category: productInfo.category || item.category,
+        weight: productInfo.weight || item.weight,
+        rating: productInfo.rating || item.rating,
+        reviewCount: productInfo.reviewCount || item.reviewCount
+      };
+    });
+
     res.json({
       success: true,
       wishlist: {
-        items: wishlist.items,
-        itemCount: wishlist.itemCount
+        _id: wishlist._id,
+        userId: wishlist.userId,
+        items: formattedItems,
+        itemCount: wishlist.items.length,
+        createdAt: wishlist.createdAt,
+        updatedAt: wishlist.updatedAt
       }
     });
-    
   } catch (error) {
     console.error('Error fetching wishlist:', error);
     res.status(500).json({
@@ -30,6 +49,7 @@ exports.getWishlist = async (req, res) => {
     });
   }
 };
+
 
 // Add item to wishlist
 exports.addToWishlist = async (req, res) => {

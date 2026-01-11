@@ -1,3 +1,5 @@
+// frontend/src/pages/Wishlist.js
+
 import React, { useState } from 'react';
 import {
   Container,
@@ -29,37 +31,83 @@ import {
 import { Link, useNavigate } from 'react-router-dom';
 import { useWishlist } from '../contexts/WishlistContext';
 import { useCart } from '../contexts/CartContext';
+import { getProductById } from '../services/api'; // Add this import
 
 const Wishlist = () => {
   const navigate = useNavigate();
   const { wishlist, loading, error, removeFromWishlist, clearWishlist, isInWishlist } = useWishlist();
   const { addToCart } = useCart();
+
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [processingItem, setProcessingItem] = useState(null);
 
   const wishlistItems = wishlist?.items || [];
   const itemCount = wishlist?.itemCount || 0;
 
-  const handleRemoveFromWishlist = async (productId, productName) => {
-    setProcessingItem(productId);
-    const result = await removeFromWishlist(productId);
-    if (result.success) {
-      showSnackbar(`"${productName}" removed from wishlist`, 'info');
-    } else {
-      showSnackbar(result.error || 'Failed to remove from wishlist', 'error');
+  const handleRemoveFromWishlist = async (wishlistItemId, productName) => {
+    setProcessingItem(wishlistItemId);
+    
+    // Find the wishlist item to get the correct identifier
+    const wishlistItem = wishlistItems.find(item => {
+      const itemId = item._id ? item._id.toString() : '';
+      const itemProductId = item.productId ? item.productId.toString() : '';
+      return itemId === wishlistItemId || itemProductId === wishlistItemId;
+    });
+    
+    if (wishlistItem) {
+      // Use the _id first, then productId as fallback
+      const identifier = wishlistItem._id || wishlistItem.productId;
+      const result = await removeFromWishlist(identifier);
+      
+      if (result.success) {
+        showSnackbar(`"${productName}" removed from wishlist`, 'info');
+      } else {
+        showSnackbar(result.error || 'Failed to remove from wishlist', 'error');
+      }
     }
+    
     setProcessingItem(null);
   };
 
-  const handleAddToCart = async (product) => {
-    setProcessingItem(product.productId);
-    const result = await addToCart(product, 1);
-    if (result.success) {
-      showSnackbar(`"${product.name}" added to cart!`, 'success');
-    } else {
-      showSnackbar(result.error || 'Failed to add to cart', 'error');
+  // Fixed: Create a proper product object from wishlist item
+  const createProductFromWishlistItem = (wishlistItem) => {
+    return {
+      _id: wishlistItem.productId || wishlistItem._id,
+      name: wishlistItem.name,
+      price: wishlistItem.price || 0,
+      imageUrl: wishlistItem.imageUrl || '',
+      category: wishlistItem.category || '',
+      weight: wishlistItem.weight || '',
+      rating: wishlistItem.rating || 0,
+      reviewCount: wishlistItem.reviewCount || 0,
+      description: wishlistItem.description || ''
+    };
+  };
+
+  const handleAddToCart = async (wishlistItem) => {
+    const itemId = wishlistItem._id || wishlistItem.productId;
+    const itemIdStr = itemId ? itemId.toString() : '';
+    
+    setProcessingItem(itemIdStr);
+    
+    try {
+      // Create a proper product object from the wishlist item
+      const product = createProductFromWishlistItem(wishlistItem);
+      console.log('Adding to cart from wishlist:', product);
+      
+      const result = await addToCart(product, 1);
+      
+      if (result.success) {
+        showSnackbar(`"${product.name}" added to cart!`, 'success');
+      } else {
+        showSnackbar(result.error || 'Failed to add to cart', 'error');
+      }
+    } catch (err) {
+      console.error('Error adding to cart from wishlist:', err);
+      showSnackbar('Failed to add item to cart', 'error');
+    } finally {
+      setProcessingItem(null);
     }
-    setProcessingItem(null);
   };
 
   const handleClearWishlist = async () => {
@@ -164,12 +212,13 @@ const Wishlist = () => {
       {/* Wishlist Items Grid */}
       <Grid container spacing={3}>
         {wishlistItems.map((item) => {
-          const itemId = item.productId || item._id;
-          const isProcessing = processingItem === itemId;
-
+          const itemId = item._id || item.productId;
+          const itemIdStr = itemId ? itemId.toString() : '';
+          const isProcessing = processingItem === itemIdStr;
+          
           return (
-            <Grid item xs={12} sm={6} md={4} lg={3} key={itemId}>
-              <Card sx={{ 
+            <Grid item xs={12} sm={6} md={4} lg={3} key={itemIdStr}>
+              <Card sx={{
                 height: '100%',
                 display: 'flex',
                 flexDirection: 'column',
@@ -182,20 +231,20 @@ const Wishlist = () => {
                 }
               }}>
                 {/* Product Image with Click to View */}
-                <Box 
-                  sx={{ 
+                <Box
+                  sx={{
                     cursor: 'pointer',
                     position: 'relative',
                     overflow: 'hidden'
                   }}
-                  onClick={() => handleViewProduct(itemId)}
+                  onClick={() => handleViewProduct(item.productId || item._id)}
                 >
                   <CardMedia
                     component="img"
                     height="160"
                     image={item.imageUrl || 'https://via.placeholder.com/300x160'}
                     alt={item.name}
-                    sx={{ 
+                    sx={{
                       objectFit: 'cover',
                       transition: 'transform 0.3s ease',
                       '&:hover': {
@@ -206,19 +255,19 @@ const Wishlist = () => {
                   {/* Category Badge */}
                   <Box sx={{ position: 'absolute', top: 10, left: 10 }}>
                     <Chip
-                      label={item.category}
+                      label={item.category || 'Uncategorized'}
                       size="small"
                       color={
                         item.category === 'Vegetables' ? 'success' :
                         item.category === 'Fruits' ? 'warning' :
                         item.category === 'Snacks' ? 'info' : 'error'
                       }
-                      sx={{ 
-                        fontSize: '0.7rem', 
+                      sx={{
+                        fontSize: '0.7rem',
                         height: 22,
                         fontWeight: 600,
                         backdropFilter: 'blur(4px)',
-                        backgroundColor: 'rgba(205, 62, 148, 0.9)', 
+                        backgroundColor: 'rgba(205, 62, 148, 0.9)',
                         color: '#fff'
                       }}
                     />
@@ -245,14 +294,14 @@ const Wishlist = () => {
                         color: 'primary.main'
                       }
                     }}
-                    onClick={() => handleViewProduct(itemId)}
+                    onClick={() => handleViewProduct(item.productId || item._id)}
                   >
                     {item.name}
                   </Typography>
 
                   {/* Weight */}
                   <Typography variant="caption" color="text.secondary" sx={{ mb: 1.5, display: 'block' }}>
-                    {item.weight}
+                    {item.weight || 'No weight specified'}
                   </Typography>
 
                   {/* Rating */}
@@ -264,7 +313,7 @@ const Wishlist = () => {
                       size="small"
                     />
                     <Typography variant="caption" color="text.secondary" sx={{ ml: 1 }}>
-                      {item.rating?.toFixed(1) || '0.0'} ({item.reviewCount || 0})
+                      {(item.rating || 0).toFixed(1)} ({item.reviewCount || 0})
                     </Typography>
                   </Box>
 
@@ -284,7 +333,7 @@ const Wishlist = () => {
                     startIcon={isProcessing ? <CircularProgress size={16} /> : <AddCartIcon />}
                     onClick={() => handleAddToCart(item)}
                     disabled={isProcessing}
-                    sx={{ 
+                    sx={{
                       py: 0.75,
                       fontSize: '0.8rem',
                       fontWeight: 600,
@@ -294,12 +343,12 @@ const Wishlist = () => {
                   >
                     {isProcessing ? 'Adding...' : 'Add to Cart'}
                   </Button>
-                  
+
                   {/* Delete Button */}
                   <IconButton
                     color="error"
                     size="small"
-                    onClick={() => handleRemoveFromWishlist(itemId, item.name)}
+                    onClick={() => handleRemoveFromWishlist(itemIdStr, item.name)}
                     disabled={isProcessing}
                     sx={{
                       border: '1px solid',
@@ -330,10 +379,10 @@ const Wishlist = () => {
         onClose={handleCloseSnackbar}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
       >
-        <Alert 
-          onClose={handleCloseSnackbar} 
-          severity={snackbar.severity} 
-          sx={{ 
+        <Alert
+          onClose={handleCloseSnackbar}
+          severity={snackbar.severity}
+          sx={{
             width: '100%',
             '& .MuiAlert-message': {
               fontSize: '0.9rem'
