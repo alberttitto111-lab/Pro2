@@ -1,3 +1,5 @@
+// frontend/src/pages/Cart.js
+
 import React, { useState } from 'react';
 import {
   Container,
@@ -47,44 +49,18 @@ const Cart = () => {
   const tax = cart?.tax || 0;
   const total = cart?.total || 0;
 
-  // const handleQuantityChange = async (productId, newQuantity) => {
-  //   if (newQuantity < 1) return;
-    
-  //   setUpdatingItem(productId);
-  //   await updateQuantity(productId, newQuantity);
-  //   setUpdatingItem(null);
-  // };
-
-  // const handleRemoveItem = async (productId) => {
-  //   await removeFromCart(productId);
-  // };
-
-  // const handleClearCart = async () => {
-  //   if (window.confirm('Are you sure you want to clear your cart?')) {
-  //     await clearCart();
-  //   }
-  // };
-
   const handleQuantityChange = async (productId, newQuantity) => {
-  if (newQuantity < 1) return;
-  
-  setUpdatingItem(productId);
-  
-  // Make sure productId is properly formatted
-  const productIdToUse = productId ? productId.toString() : '';
-  
-  await updateQuantity(productIdToUse, newQuantity);
-  setUpdatingItem(null);
-};
+    if (newQuantity < 1) return;
+    setUpdatingItem(productId);
+    const productIdStr = productId ? productId.toString() : '';
+    await updateQuantity(productIdStr, newQuantity);
+    setUpdatingItem(null);
+  };
 
-const handleRemoveItem = async (productId) => {
-  // Make sure productId is properly formatted
-  const productIdToUse = productId ? productId.toString() : '';
-  
-  await removeFromCart(productIdToUse);
-};
-
-
+  const handleRemoveItem = async (productId) => {
+    const productIdStr = productId ? productId.toString() : '';
+    await removeFromCart(productIdStr);
+  };
 
   const handleClearCart = async () => {
     if (window.confirm('Are you sure you want to clear your cart?')) {
@@ -93,9 +69,7 @@ const handleRemoveItem = async (productId) => {
   };
 
   const handleCheckout = () => {
-    // For now, just show a message
     alert('Checkout functionality coming soon!');
-    // navigate('/checkout');
   };
 
   if (loading && cartItems.length === 0) {
@@ -190,67 +164,121 @@ const handleRemoveItem = async (productId) => {
                 </TableHead>
                 <TableBody>
                   {cartItems.map((item) => {
-  // Get the correct product ID
-  const itemProductId = item.productId || item._id;
-  const itemIdStr = itemProductId ? itemProductId.toString() : '';
-  
-  return (
-    <TableRow key={itemIdStr} hover>
-      <TableCell>
-        {/* ... item display ... */}
-      </TableCell>
-      <TableCell>
-        <Typography variant="body2" sx={{ fontWeight: 500 }}>
-          ${(item.price || 0).toFixed(2)}
-        </Typography>
-      </TableCell>
-      <TableCell align="center">
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <IconButton
-            size="small"
-            onClick={() => handleQuantityChange(itemIdStr, (item.quantity || 1) - 1)}
-            disabled={(item.quantity || 1) <= 1 || updatingItem === itemIdStr}
-          >
-            <RemoveIcon fontSize="small" />
-          </IconButton>
-          <TextField
-            size="small"
-            value={item.quantity || 1}
-            onChange={(e) => handleQuantityChange(itemIdStr, parseInt(e.target.value) || 1)}
-            disabled={updatingItem === itemIdStr}
-            sx={{ width: 60, mx: 1 }}
-            inputProps={{ 
-              style: { textAlign: 'center' },
-              min: 1
-            }}
-          />
-          <IconButton
-            size="small"
-            onClick={() => handleQuantityChange(itemIdStr, (item.quantity || 1) + 1)}
-            disabled={updatingItem === itemIdStr}
-          >
-            <AddIcon fontSize="small" />
-          </IconButton>
-        </Box>
-      </TableCell>
-      <TableCell align="right">
-        <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'primary.main' }}>
-          ${((item.price || 0) * (item.quantity || 1)).toFixed(2)}
-        </Typography>
-      </TableCell>
-      <TableCell align="center">
-        <IconButton
-          size="small"
-          color="error"
-          onClick={() => handleRemoveItem(itemIdStr)}
-          disabled={updatingItem === itemIdStr}
-        >
-          <DeleteIcon fontSize="small" />
-        </IconButton>
-      </TableCell>
-    </TableRow>
-  );
-})}
+                    const itemProductId = item.productId || item._id;
+                    const itemIdStr = itemProductId ? itemProductId.toString() : '';
+                    
+                    return (
+                      <TableRow key={itemIdStr} hover>
+                        <TableCell>
+                          {/* Updated Product Cell with Image */}
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                            {/* Product Image */}
+                            <Box
+                              sx={{
+                                width: 70,
+                                height: 70,
+                                borderRadius: 1,
+                                overflow: 'hidden',
+                                flexShrink: 0,
+                                border: '1px solid #e0e0e0',
+                                bgcolor: 'grey.100'
+                              }}
+                            >
+                              <img
+                                src={item.imageUrl || 'https://via.placeholder.com/70x70?text=No+Image'}
+                                alt={item.name}
+                                style={{
+                                  width: '100%',
+                                  height: '100%',
+                                  objectFit: 'cover'
+                                }}
+                                onError={(e) => {
+                                  e.target.src = 'https://via.placeholder.com/70x70?text=No+Image';
+                                }}
+                              />
+                            </Box>
+                            
+                            {/* Product Details */}
+                            <Box>
+                              <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5 }}>
+                                {item.name}
+                              </Typography>
+                              {item.category && (
+                                <Chip
+                                  label={item.category}
+                                  size="small"
+                                  color={
+                                    item.category === 'Vegetables' ? 'success' :
+                                    item.category === 'Fruits' ? 'warning' :
+                                    item.category === 'Snacks' ? 'info' : 'error'
+                                  }
+                                  sx={{ height: 20, fontSize: '0.65rem', mb: 0.5 }}
+                                />
+                              )}
+                              {item.weight && (
+                                <Typography variant="caption" color="text.secondary" display="block">
+                                  {item.weight}
+                                </Typography>
+                              )}
+                            </Box>
+                          </Box>
+                        </TableCell>
+                        
+                        <TableCell>
+                          <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                            ${(item.price || 0).toFixed(2)}
+                          </Typography>
+                        </TableCell>
+                        
+                        <TableCell align="center">
+                          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <IconButton
+                              size="small"
+                              onClick={() => handleQuantityChange(itemIdStr, (item.quantity || 1) - 1)}
+                              disabled={(item.quantity || 1) <= 1 || updatingItem === itemIdStr}
+                            >
+                              <RemoveIcon fontSize="small" />
+                            </IconButton>
+                            <TextField
+                              size="small"
+                              value={item.quantity || 1}
+                              onChange={(e) => handleQuantityChange(itemIdStr, parseInt(e.target.value) || 1)}
+                              disabled={updatingItem === itemIdStr}
+                              sx={{ width: 60, mx: 1 }}
+                              inputProps={{
+                                style: { textAlign: 'center' },
+                                min: 1
+                              }}
+                            />
+                            <IconButton
+                              size="small"
+                              onClick={() => handleQuantityChange(itemIdStr, (item.quantity || 1) + 1)}
+                              disabled={updatingItem === itemIdStr}
+                            >
+                              <AddIcon fontSize="small" />
+                            </IconButton>
+                          </Box>
+                        </TableCell>
+                        
+                        <TableCell align="right">
+                          <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'primary.main' }}>
+                            ${((item.price || 0) * (item.quantity || 1)).toFixed(2)}
+                          </Typography>
+                        </TableCell>
+                        
+                        <TableCell align="center">
+                          <IconButton
+                            size="small"
+                            color="error"
+                            onClick={() => handleRemoveItem(itemIdStr)}
+                            disabled={updatingItem === itemIdStr}
+                          >
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </TableContainer>
@@ -274,7 +302,6 @@ const handleRemoveItem = async (productId) => {
                   ${subtotal.toFixed(2)}
                 </Typography>
               </Box>
-
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                 <Typography variant="body2" color="text.secondary">
                   Shipping
@@ -283,7 +310,6 @@ const handleRemoveItem = async (productId) => {
                   {shipping === 0 ? 'FREE' : `$${shipping.toFixed(2)}`}
                 </Typography>
               </Box>
-
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
                 <Box>
                   <Typography variant="body2" color="text.secondary">
@@ -297,9 +323,7 @@ const handleRemoveItem = async (productId) => {
                   ${tax.toFixed(2)}
                 </Typography>
               </Box>
-
               <Divider sx={{ my: 2 }} />
-
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
                 <Typography variant="h6" sx={{ fontWeight: 700 }}>
                   Total
@@ -308,58 +332,58 @@ const handleRemoveItem = async (productId) => {
                   ${total.toFixed(2)}
                 </Typography>
               </Box>
-
-              {subtotal < 50 && subtotal > 0 && (
-                <Alert severity="info" sx={{ mb: 3, borderRadius: 2 }}>
-                  <Typography variant="body2">
-                    <strong>Spend ${(50 - subtotal).toFixed(2)} more to get FREE shipping!</strong>
-                  </Typography>
-                </Alert>
-              )}
-
-              <Button
-                variant="contained"
-                color="primary"
-                size="large"
-                fullWidth
-                onClick={handleCheckout}
-                disabled={loading}
-                sx={{ py: 1.5, fontWeight: 600, mb: 2 }}
-              >
-                Proceed to Checkout
-              </Button>
-
-              <Button
-                component={Link}
-                to="/products"
-                variant="outlined"
-                color="primary"
-                size="large"
-                fullWidth
-                sx={{ py: 1.5 }}
-              >
-                Continue Shopping
-              </Button>
             </Box>
 
-            {/* Shipping Info */}
-            <Card variant="outlined" sx={{ mt: 3 }}>
-              <CardContent sx={{ p: 2 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                  <ShippingIcon fontSize="small" color="action" />
-                  <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                    Shipping Information
-                  </Typography>
-                </Box>
-                <Typography variant="caption" color="text.secondary">
-                  • Orders ship within 24 hours<br />
-                  • Free shipping on orders over $50<br />
-                  • Delivery in 2-3 business days<br />
-                  • Frozen at optimal temperature
+            {subtotal < 50 && subtotal > 0 && (
+              <Alert severity="info" sx={{ mb: 3, borderRadius: 2 }}>
+                <Typography variant="body2">
+                  <strong>Spend ${(50 - subtotal).toFixed(2)} more to get FREE shipping!</strong>
                 </Typography>
-              </CardContent>
-            </Card>
+              </Alert>
+            )}
+
+            <Button
+              variant="contained"
+              color="primary"
+              size="large"
+              fullWidth
+              onClick={handleCheckout}
+              disabled={loading}
+              sx={{ py: 1.5, fontWeight: 600, mb: 2 }}
+            >
+              Proceed to Checkout
+            </Button>
+
+            <Button
+              component={Link}
+              to="/products"
+              variant="outlined"
+              color="primary"
+              size="large"
+              fullWidth
+              sx={{ py: 1.5 }}
+            >
+              Continue Shopping
+            </Button>
           </Paper>
+
+          {/* Shipping Info */}
+          <Card variant="outlined" sx={{ mt: 3 }}>
+            <CardContent sx={{ p: 2 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                <ShippingIcon fontSize="small" color="action" />
+                <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                  Shipping Information
+                </Typography>
+              </Box>
+              <Typography variant="caption" color="text.secondary">
+                • Orders ship within 24 hours<br />
+                • Free shipping on orders over $50<br />
+                • Delivery in 2-3 business days<br />
+                • Frozen at optimal temperature
+              </Typography>
+            </CardContent>
+          </Card>
         </Grid>
       </Grid>
     </Container>
