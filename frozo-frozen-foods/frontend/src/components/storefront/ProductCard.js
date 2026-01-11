@@ -1,15 +1,28 @@
+// frontend/src/components/storefront/ProductCard.js
+
 import React from 'react';
-import { Card, CardContent, CardMedia, Typography, Box, Rating, Chip, Button } from '@mui/material';
+import { Card, CardContent, CardMedia, Typography, Box, Rating, Chip, Button, IconButton } from '@mui/material';
 import AddShoppingCartIcon from '@mui/icons-material/AddShoppingCart';
+import FavoriteIcon from '@mui/icons-material/Favorite';
+import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import { useCart } from '../../contexts/CartContext';
+import { useWishlist } from '../../contexts/WishlistContext';
 
 const ProductCard = ({ product }) => {
   const { addToCart, isInCart, getItemQuantity } = useCart();
+  const { toggleWishlist, isInWishlist } = useWishlist();
+
   const quantityInCart = getItemQuantity(product._id);
+  const isInWishlistItem = isInWishlist(product._id);
 
   const handleAddToCart = async (e) => {
-    e.stopPropagation(); // Prevent card click
+    e.stopPropagation();
     await addToCart(product, 1);
+  };
+
+  const handleToggleWishlist = (e) => {
+    e.stopPropagation();
+    toggleWishlist(product);
   };
 
   return (
@@ -21,11 +34,36 @@ const ProductCard = ({ product }) => {
       overflow: 'hidden',
       transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
       boxShadow: '0 1px 4px rgba(0,0,0,0.08)',
+      position: 'relative', // Added for wishlist button positioning
       '&:hover': {
         transform: 'translateY(-4px)',
         boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
       }
     }}>
+      {/* Wishlist Heart Button (Top Right) */}
+      <IconButton
+        size="small"
+        onClick={handleToggleWishlist}
+        sx={{
+          position: 'absolute',
+          top: 8,
+          right: 8,
+          zIndex: 2,
+          backgroundColor: 'rgba(255, 255, 255, 0.9)',
+          '&:hover': {
+            backgroundColor: 'rgba(255, 255, 255, 1)',
+          },
+          width: 32,
+          height: 32,
+        }}
+      >
+        {isInWishlistItem ? (
+          <FavoriteIcon sx={{ color: 'secondary.main', fontSize: 20 }} />
+        ) : (
+          <FavoriteBorderIcon sx={{ color: 'text.secondary', fontSize: 20 }} />
+        )}
+      </IconButton>
+
       {/* Product Image */}
       <CardMedia
         component="img"
@@ -37,6 +75,7 @@ const ProductCard = ({ product }) => {
           transition: 'transform 0.3s ease',
         }}
       />
+
       <CardContent sx={{
         flexGrow: 1,
         p: 1.5,

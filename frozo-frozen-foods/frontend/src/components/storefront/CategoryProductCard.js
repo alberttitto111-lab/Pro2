@@ -1,13 +1,14 @@
 // frontend/src/components/storefront/CategoryProductCard.js
+
 import React from 'react';
-import { Box, Typography, Chip, Rating, Button } from '@mui/material';
+import { Box, Typography, Chip, Rating, Button, IconButton } from '@mui/material';
 import { useCart } from '../../contexts/CartContext';
 import { useWishlist } from '../../contexts/WishlistContext';
 import AddShoppingCartIcon from '@mui/icons-material/AddShoppingCart';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 
-const CategoryProductCard = ({ product, color = 'primary' }) => {
+const CategoryProductCard = ({ product }) => {
   const { addToCart, isInCart, getItemQuantity } = useCart();
   const { toggleWishlist, isInWishlist } = useWishlist();
 
@@ -41,11 +42,36 @@ const CategoryProductCard = ({ product, color = 'primary' }) => {
       transition: 'transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out',
       boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
       border: '1px solid #e0e0e0',
+      position: 'relative',
       '&:hover': {
         transform: 'translateY(-6px)',
         boxShadow: '0 12px 32px rgba(0,0,0,0.15)',
       }
     }}>
+      {/* Wishlist Heart Button (Top Right) */}
+      <IconButton
+        size="small"
+        onClick={handleToggleWishlist}
+        sx={{
+          position: 'absolute',
+          top: 8,
+          right: 8,
+          zIndex: 2,
+          backgroundColor: 'rgba(255, 255, 255, 0.9)',
+          '&:hover': {
+            backgroundColor: 'rgba(255, 255, 255, 1)',
+          },
+          width: 32,
+          height: 32,
+        }}
+      >
+        {isInWishlist(product._id) ? (
+          <FavoriteIcon sx={{ color: 'secondary.main', fontSize: 20 }} />
+        ) : (
+          <FavoriteBorderIcon sx={{ color: 'text.secondary', fontSize: 20 }} />
+        )}
+      </IconButton>
+
       {/* Product Image */}
       <Box
         component="img"
@@ -120,7 +146,6 @@ const CategoryProductCard = ({ product, color = 'primary' }) => {
           <Typography variant="h5" color="primary" sx={{ fontWeight: 800 }}>
             ${product.price.toFixed(2)}
           </Typography>
-          
           <Box sx={{ display: 'flex', gap: 1 }}>
             <Button
               variant="contained"
@@ -135,25 +160,6 @@ const CategoryProductCard = ({ product, color = 'primary' }) => {
               }}
             >
               {isInCart(product._id) ? `Added (${getItemQuantity(product._id)})` : 'Add'}
-            </Button>
-            
-            <Button
-              variant="outlined"
-              size="small"
-              onClick={handleToggleWishlist}
-              sx={{
-                minWidth: 'auto',
-                p: 1,
-                borderRadius: 1.5,
-                borderColor: isInWishlist(product._id) ? 'secondary.main' : 'grey.400',
-                color: isInWishlist(product._id) ? 'secondary.main' : 'text.secondary'
-              }}
-            >
-              {isInWishlist(product._id) ? (
-                <FavoriteIcon fontSize="small" />
-              ) : (
-                <FavoriteBorderIcon fontSize="small" />
-              )}
             </Button>
           </Box>
         </Box>
