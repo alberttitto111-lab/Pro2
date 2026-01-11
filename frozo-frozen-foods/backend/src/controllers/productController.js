@@ -1,4 +1,6 @@
 const Product = require('../models/Product');
+const path = require('path');
+const fs = require('fs');
 
 // Update getAllProducts to ensure consistent format
 exports.getAllProducts = async (req, res) => {
@@ -178,6 +180,46 @@ exports.deleteProduct = async (req, res) => {
     res.status(500).json({
       success: false,
       error: error.message
+    });
+  }
+};
+
+
+// Upload product image
+exports.uploadProductImage = async (req, res) => {
+  try {
+    console.log('Uploading image...', req.file);
+    
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        error: 'No image file provided'
+      });
+    }
+
+    // Get the file information
+    const file = req.file;
+    
+    // Create a URL that the frontend can access
+    // In development, use the full URL including your server address
+    const baseUrl = process.env.BASE_URL || 'http://localhost:5000';
+    const imageUrl = `${baseUrl}/uploads/${file.filename}`;
+    
+    console.log('Image uploaded successfully:', imageUrl);
+    
+    res.json({
+      success: true,
+      message: 'Image uploaded successfully',
+      imageUrl: imageUrl,
+      fileName: file.filename,
+      fileSize: file.size,
+      mimetype: file.mimetype
+    });
+  } catch (error) {
+    console.error('Error uploading image:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to upload image: ' + error.message
     });
   }
 };

@@ -92,6 +92,32 @@ export const deleteProduct = async (id) => {
   }
 };
 
+export const uploadProductImage = async (formData) => {
+  try {
+    // Create a separate axios instance for file uploads with different headers
+    const uploadAPI = axios.create({
+      baseURL: process.env.REACT_APP_API_URL || 'http://localhost:5000/api',
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+      timeout: 30000, // Longer timeout for file uploads
+    });
+
+    // Add auth token if exists
+    const token = localStorage.getItem('adminToken');
+    if (token) {
+      uploadAPI.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    }
+
+    const response = await uploadAPI.post('/products/upload-image', formData);
+    return response;
+  } catch (error) {
+    console.error('Error uploading image:', error);
+    throw error;
+  }
+};
+
+
 // Admin Auth APIs
 export const adminLogin = async (credentials) => {
   try {

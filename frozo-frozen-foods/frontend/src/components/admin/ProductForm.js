@@ -1,3 +1,5 @@
+// frontend/src/components/admin/ProductForm.js
+
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import {
@@ -11,12 +13,18 @@ import {
   InputAdornment,
   Alert,
   CircularProgress,
+  Card,
+  CardContent,
+  IconButton
 } from '@mui/material';
-import { createProduct, updateProduct } from '../../services/api';
+import { createProduct, updateProduct, uploadProductImage } from '../../services/api';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import StarIcon from '@mui/icons-material/Star';
 import ImageIcon from '@mui/icons-material/Image';
 import CancelIcon from '@mui/icons-material/Cancel';
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import DeleteIcon from '@mui/icons-material/Delete';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 
 const ProductForm = ({ product, onSuccess }) => {
   const { register, handleSubmit, formState: { errors, isSubmitting }, reset, watch, setValue } = useForm({
@@ -32,6 +40,11 @@ const ProductForm = ({ product, onSuccess }) => {
     }
   });
 
+  const [uploadedImage, setUploadedImage] = React.useState(null);
+  const [uploadedImagePreview, setUploadedImagePreview] = React.useState(null);
+  const [uploadingImage, setUploadingImage] = React.useState(false);
+  const [imageError, setImageError] = React.useState('');
+
   const category = watch('category');
   const imageUrl = watch('imageUrl');
   const priceValue = watch('price');
@@ -40,78 +53,37 @@ const ProductForm = ({ product, onSuccess }) => {
   React.useEffect(() => {
     if (product) {
       reset(product);
+      // If product has an imageUrl, set it as uploaded image preview
+      if (product.imageUrl) {
+        setUploadedImagePreview(product.imageUrl);
+      }
     }
   }, [product, reset]);
 
-  const onSubmit = async (data) => {
-    console.log('Submitting product data:', data);
-    
-    try {
-      const productData = {
-        name: data.name.trim(),
-        description: data.description.trim(),
-        price: parseFloat(parseFloat(data.price).toFixed(2)),
-        category: data.category,
-        weight: data.weight.trim(),
-        imageUrl: data.imageUrl?.trim() || '',
-        rating: parseFloat(parseFloat(data.rating).toFixed(1)),
-        reviewCount: parseInt(data.reviewCount) || 0
-      };
-
-      console.log('Formatted product data:', productData);
-
-      let response;
-      if (product && product._id) {
-        response = await updateProduct(product._id, productData);
-      } else {
-        response = await createProduct(productData);
-      }
-      
-      console.log('API Response:', response.data);
-      
-      if (response.data.success) {
-        if (onSuccess) onSuccess();
-      } else {
-        alert('Failed to save product: ' + (response.data.error || 'Unknown error'));
-      }
-    } catch (error) {
-      console.error('Error saving product:', error);
-      alert('Error saving product: ' + (error.response?.data?.error || error.message));
-    }
-  };
-
-  // Validate decimal numbers
   const validateDecimal = (value, fieldName, min = 0, max = null, decimalPlaces = 2) => {
     if (value === '' || value === null || value === undefined) {
       return `${fieldName} is required`;
     }
-    
     const num = parseFloat(value);
-    
     if (isNaN(num)) {
       return `${fieldName} must be a valid number`;
     }
-    
     if (num < min) {
       return `${fieldName} must be at least ${min}`;
     }
-    
     if (max !== null && num > max) {
       return `${fieldName} must be at most ${max}`;
     }
-    
     const stringValue = value.toString();
     const decimalPart = stringValue.split('.')[1];
     if (decimalPart && decimalPart.length > decimalPlaces) {
       return `${fieldName} can have maximum ${decimalPlaces} decimal place${decimalPlaces === 1 ? '' : 's'}`;
     }
-    
     return true;
   };
 
   const isValidImageUrl = (url) => {
     if (!url || url.trim() === '') return true;
-    
     try {
       new URL(url);
       return true;
@@ -124,6 +96,112 @@ const ProductForm = ({ product, onSuccess }) => {
     if (!value) return '0.00';
     const num = parseFloat(value);
     return isNaN(num) ? '0.00' : num.toFixed(decimalPlaces);
+  };
+
+  const handleImageUpload = async (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  // Validate file type
+  const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+  if (!validTypes.includes(file.type)) {
+    setImageError('Please upload a valid image file (JPEG, PNG, GIF, WebP)');
+    return;
+  }
+
+  // Validate file size (max 5MB)
+  const maxSize = 5 * 1024 * 1024; // 5MB
+  if (file.size > maxSize) {
+    setImageError('Image size must be less than 5MB');
+    return;
+  }
+
+  setUploadingImage(true);
+  setImageError('');
+
+  // Create preview
+  const reader = new FileReader();
+  reader.onloadend = () => {
+    setUploadedImagePreview(reader.result);
+  };
+  reader.readAsDataURL(file);
+
+  // Upload to server
+  try {
+    const formData = new FormData();
+    formData.append('image', file);
+
+    console.log('Uploading image...', file.name);
+    
+    const response = await uploadProductImage(formData);
+    
+    console.log('Upload response:', response.data);
+    
+    if (response.data.success) {
+      setUploadedImage(response.data.imageUrl);
+      // Also update the imageUrl form field
+      setValue('imageUrl', response.data.imageUrl);
+    } else {
+      setImageError(response.data.error || 'Failed to upload image');
+      setUploadedImagePreview(null);
+    }
+  } catch (error) {
+    console.error('Error uploading image:', error);
+    setImageError('Failed to upload image. Please try again.');
+    setUploadedImagePreview(null);
+  } finally {
+    setUploadingImage(false);
+  }
+};
+
+
+  const handleRemoveUploadedImage = () => {
+    setUploadedImage(null);
+    setUploadedImagePreview(null);
+    setImageError('');
+  };
+
+  const onSubmit = async (data) => {
+    console.log('Submitting product data:', data);
+    
+    // Validate that either imageUrl or uploadedImage is provided
+    if (!data.imageUrl?.trim() && !uploadedImage) {
+      setImageError('Please either enter an image URL or upload an image');
+      return;
+    }
+
+    try {
+      const productData = {
+        name: data.name.trim(),
+        description: data.description.trim(),
+        price: parseFloat(parseFloat(data.price).toFixed(2)),
+        category: data.category,
+        weight: data.weight.trim(),
+        imageUrl: uploadedImage || data.imageUrl?.trim() || '',
+        rating: parseFloat(parseFloat(data.rating).toFixed(1)),
+        reviewCount: parseInt(data.reviewCount) || 0
+      };
+
+      console.log('Formatted product data:', productData);
+
+      let response;
+      if (product && product._id) {
+        response = await updateProduct(product._id, productData);
+      } else {
+        response = await createProduct(productData);
+      }
+
+      console.log('API Response:', response.data);
+
+      if (response.data.success) {
+        if (onSuccess) onSuccess();
+      } else {
+        alert('Failed to save product: ' + (response.data.error || 'Unknown error'));
+      }
+    } catch (error) {
+      console.error('Error saving product:', error);
+      alert('Error saving product: ' + (error.response?.data?.error || error.message));
+    }
   };
 
   return (
@@ -169,7 +247,7 @@ const ProductForm = ({ product, onSuccess }) => {
           <TextField
             fullWidth
             label="Product Name *"
-            {...register('name', { 
+            {...register('name', {
               required: 'Product name is required',
               minLength: {
                 value: 2,
@@ -217,7 +295,7 @@ const ProductForm = ({ product, onSuccess }) => {
               step: "0.01",
               pattern: "\\d+(\\.\\d{1,2})?"
             }}
-            {...register('price', { 
+            {...register('price', {
               required: 'Price is required',
               validate: (value) => validateDecimal(value, 'Price', 0.01, 10000, 2)
             })}
@@ -249,7 +327,7 @@ const ProductForm = ({ product, onSuccess }) => {
           <TextField
             fullWidth
             label="Weight/Package *"
-            {...register('weight', { 
+            {...register('weight', {
               required: 'Weight is required',
               minLength: {
                 value: 2,
@@ -272,7 +350,7 @@ const ProductForm = ({ product, onSuccess }) => {
             label="Description *"
             multiline
             rows={3}
-            {...register('description', { 
+            {...register('description', {
               required: 'Description is required',
               minLength: {
                 value: 10,
@@ -299,9 +377,9 @@ const ProductForm = ({ product, onSuccess }) => {
               }
             })}
             error={!!errors.imageUrl}
-            helperText={errors.imageUrl?.message || 'Enter a valid image URL or leave empty'}
+            helperText={errors.imageUrl?.message || 'Enter a valid image URL or upload an image below'}
             size="small"
-            disabled={isSubmitting}
+            disabled={isSubmitting || uploadingImage}
             sx={{ mb: 2 }}
             placeholder="https://images.unsplash.com/photo-..."
             InputProps={{
@@ -312,6 +390,96 @@ const ProductForm = ({ product, onSuccess }) => {
               ),
             }}
           />
+        </Grid>
+
+        {/* Upload Image Section */}
+        <Grid item xs={12}>
+          <Card variant="outlined" sx={{ mb: 2 }}>
+            <CardContent sx={{ p: 2 }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                <CloudUploadIcon fontSize="small" />
+                Upload Image
+                {uploadedImage && (
+                  <CheckCircleIcon color="success" fontSize="small" />
+                )}
+              </Typography>
+              
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                Upload an image from your computer. Supported formats: JPEG, PNG, GIF, WebP (Max 5MB)
+              </Typography>
+
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                <Button
+                  variant="outlined"
+                  component="label"
+                  startIcon={<CloudUploadIcon />}
+                  disabled={uploadingImage || isSubmitting}
+                >
+                  {uploadingImage ? 'Uploading...' : 'Choose Image'}
+                  <input
+                    type="file"
+                    hidden
+                    accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                    onChange={handleImageUpload}
+                    disabled={uploadingImage || isSubmitting}
+                  />
+                </Button>
+                
+                {uploadedImagePreview && (
+                  <Button
+                    variant="outlined"
+                    color="error"
+                    size="small"
+                    startIcon={<DeleteIcon />}
+                    onClick={handleRemoveUploadedImage}
+                    disabled={uploadingImage || isSubmitting}
+                  >
+                    Remove
+                  </Button>
+                )}
+              </Box>
+
+              {imageError && (
+                <Alert severity="error" sx={{ mb: 2, borderRadius: 1 }}>
+                  {imageError}
+                </Alert>
+              )}
+
+              {uploadingImage && (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                  <CircularProgress size={20} />
+                  <Typography variant="body2" color="text.secondary">
+                    Uploading image...
+                  </Typography>
+                </Box>
+              )}
+
+              {/* Image Preview */}
+              {(uploadedImagePreview || imageUrl) && (
+                <Box sx={{ mt: 2 }}>
+                  <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
+                    {uploadedImage ? 'Uploaded Image Preview:' : 'Image URL Preview:'}
+                  </Typography>
+                  <Box sx={{ textAlign: 'center' }}>
+                    <img
+                      src={uploadedImagePreview || imageUrl}
+                      alt="Preview"
+                      style={{
+                        maxWidth: '100%',
+                        maxHeight: 200,
+                        borderRadius: 8,
+                        border: '1px solid #e0e0e0',
+                        objectFit: 'cover',
+                      }}
+                      onError={(e) => {
+                        e.target.src = 'https://via.placeholder.com/400x200?text=Image+Not+Found';
+                      }}
+                    />
+                  </Box>
+                </Box>
+              )}
+            </CardContent>
+          </Card>
         </Grid>
 
         {/* Rating */}
@@ -327,7 +495,7 @@ const ProductForm = ({ product, onSuccess }) => {
               step: "0.1",
               pattern: "[0-5](\\.\\d)?"
             }}
-            {...register('rating', { 
+            {...register('rating', {
               required: 'Rating is required',
               validate: (value) => validateDecimal(value, 'Rating', 0, 5, 1)
             })}
@@ -364,7 +532,7 @@ const ProductForm = ({ product, onSuccess }) => {
               min: "0",
               step: "1"
             }}
-            {...register('reviewCount', { 
+            {...register('reviewCount', {
               required: 'Review count is required',
               min: {
                 value: 0,
@@ -425,47 +593,22 @@ const ProductForm = ({ product, onSuccess }) => {
           </Alert>
         </Grid>
 
-        {/* Image Preview */}
-        {imageUrl && imageUrl.trim() !== '' && (
-          <Grid item xs={12}>
-            <Alert severity="info" sx={{ borderRadius: 2, mb: 2 }}>
-              Image Preview
-            </Alert>
-            <Box sx={{ textAlign: 'center', mb: 2 }}>
-              <img
-                src={imageUrl}
-                alt="Preview"
-                style={{
-                  maxWidth: '100%',
-                  maxHeight: 200,
-                  borderRadius: 8,
-                  border: '1px solid #e0e0e0',
-                  objectFit: 'cover',
-                }}
-                onError={(e) => {
-                  e.target.src = 'https://via.placeholder.com/400x200?text=Image+Not+Found';
-                }}
-              />
-            </Box>
-          </Grid>
-        )}
-
-        {/* Action Buttons - ONLY ONE SET HERE */}
+        {/* Action Buttons */}
         <Grid item xs={12}>
-          <Box sx={{ 
-            mt: 4, 
-            pt: 3, 
+          <Box sx={{
+            mt: 4,
+            pt: 3,
             borderTop: '1px solid #e0e0e0',
-            display: 'flex', 
-            justifyContent: 'flex-end', 
-            gap: 2 
+            display: 'flex',
+            justifyContent: 'flex-end',
+            gap: 2
           }}>
             <Button
               onClick={onSuccess}
               variant="outlined"
               color="inherit"
               startIcon={<CancelIcon />}
-              disabled={isSubmitting}
+              disabled={isSubmitting || uploadingImage}
             >
               Cancel
             </Button>
@@ -473,7 +616,7 @@ const ProductForm = ({ product, onSuccess }) => {
               type="submit"
               variant="contained"
               color="primary"
-              disabled={isSubmitting}
+              disabled={isSubmitting || uploadingImage}
               startIcon={isSubmitting ? <CircularProgress size={20} /> : null}
               sx={{ minWidth: 150 }}
             >

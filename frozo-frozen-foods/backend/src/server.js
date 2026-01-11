@@ -2,15 +2,15 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
+
 const productRoutes = require('./routes/productRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const testRoutes = require('./routes/testRoutes');
-
 const cartRoutes = require('./routes/cartRoutes');
-
 const wishlistRoutes = require('./routes/wishlistRoutes');
 
+const path = require('path');
 
 dotenv.config();
 
@@ -29,6 +29,16 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Serve static files from uploads directory
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+
+const fs = require('fs');
+const uploadsDir = path.join(__dirname, '../uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
 
 // Request logging
 app.use((req, res, next) => {
@@ -84,13 +94,9 @@ app.use('/api/products', productRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/notifications', notificationRoutes); 
 app.use('/api/test', testRoutes);
-
 app.use('/api/cart', cartRoutes);
-// console.log(`🛒 Cart API: http://localhost:${PORT}/api/cart`);
-
 app.use('/api/wishlist', wishlistRoutes);
 
-// console.log(`❤️  Wishlist API: http://localhost:${PORT}/api/wishlist`);
 
 
 // 404 handler
