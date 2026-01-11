@@ -49,18 +49,40 @@ const Cart = () => {
   const tax = cart?.tax || 0;
   const total = cart?.total || 0;
 
-  const handleQuantityChange = async (productId, newQuantity) => {
-    if (newQuantity < 1) return;
-    setUpdatingItem(productId);
-    const productIdStr = productId ? productId.toString() : '';
-    await updateQuantity(productIdStr, newQuantity);
-    setUpdatingItem(null);
-  };
+  const handleQuantityChange = async (cartItemId, newQuantity) => {
+  if (newQuantity < 1) return;
+  setUpdatingItem(cartItemId);
+  
+  // Find the cart item to get the correct identifier
+  const cartItem = cartItems.find(item => {
+    const itemId = item._id ? item._id.toString() : '';
+    const itemProductId = item.productId ? item.productId.toString() : '';
+    return itemId === cartItemId || itemProductId === cartItemId;
+  });
+  
+  if (cartItem) {
+    // Use the _id first, then productId as fallback
+    const identifier = cartItem._id || cartItem.productId;
+    await updateQuantity(identifier, newQuantity);
+  }
+  
+  setUpdatingItem(null);
+};
 
-  const handleRemoveItem = async (productId) => {
-    const productIdStr = productId ? productId.toString() : '';
-    await removeFromCart(productIdStr);
-  };
+  const handleRemoveItem = async (cartItemId) => {
+  // Find the cart item to get the correct identifier
+  const cartItem = cartItems.find(item => {
+    const itemId = item._id ? item._id.toString() : '';
+    const itemProductId = item.productId ? item.productId.toString() : '';
+    return itemId === cartItemId || itemProductId === cartItemId;
+  });
+  
+  if (cartItem) {
+    // Use the _id first, then productId as fallback
+    const identifier = cartItem._id || cartItem.productId;
+    await removeFromCart(identifier);
+  }
+};
 
   const handleClearCart = async () => {
     if (window.confirm('Are you sure you want to clear your cart?')) {
@@ -164,8 +186,8 @@ const Cart = () => {
                 </TableHead>
                 <TableBody>
                   {cartItems.map((item) => {
-                    const itemProductId = item.productId || item._id;
-                    const itemIdStr = itemProductId ? itemProductId.toString() : '';
+                    const itemId = item._id || item.productId;
+                    const itemIdStr = itemId ? itemId.toString() : '';
                     
                     return (
                       <TableRow key={itemIdStr} hover>
@@ -250,6 +272,7 @@ const Cart = () => {
                                 min: 1
                               }}
                             />
+                            {/* ... quantity field ... */}
                             <IconButton
                               size="small"
                               onClick={() => handleQuantityChange(itemIdStr, (item.quantity || 1) + 1)}

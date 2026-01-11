@@ -2,43 +2,48 @@ const Cart = require('../models/Cart');
 const Product = require('../models/Product');
 
 // Get user's cart
+// In the getCart function, update the population and response:
+
 exports.getCart = async (req, res) => {
   try {
     const { userId } = req.params;
-    
     let cart = await Cart.findOne({ userId }).populate('items.productId', 'name price imageUrl category weight');
-    
+
     if (!cart) {
-      // Create empty cart if doesn't exist
       cart = new Cart({ userId, items: [] });
       await cart.save();
     }
-    
+
+    // Ensure consistent productId format
+    const formattedItems = cart.items.map(item => {
+      const productInfo = item.productId || {};
+      return {
+        _id: item._id,
+        productId: item.productId ? item.productId._id || item.productId.toString() : null,
+        name: productInfo.name || item.name,
+        price: productInfo.price || item.price,
+        quantity: item.quantity,
+        imageUrl: productInfo.imageUrl || item.imageUrl,
+        category: productInfo.category || item.category,
+        weight: productInfo.weight || item.weight
+      };
+    });
+
     res.json({
-  success: true,
-  cart: {
-    _id: cart._id,
-    userId: cart.userId,
-    items: cart.items.map(item => ({
-      _id: item._id,
-      productId: item.productId ? item.productId.toString() : null,
-      name: item.name,
-      price: item.price,
-      quantity: item.quantity,
-      imageUrl: item.imageUrl,
-      category: item.category,
-      weight: item.weight
-    })),
-    totalItems: cart.totalItems,
-    subtotal: cart.subtotal,
-    shipping: cart.shipping,
-    tax: cart.tax,
-    total: cart.total,
-    createdAt: cart.createdAt,
-    updatedAt: cart.updatedAt
-  }
-});
-    
+      success: true,
+      cart: {
+        _id: cart._id,
+        userId: cart.userId,
+        items: formattedItems,
+        totalItems: cart.totalItems,
+        subtotal: cart.subtotal,
+        shipping: cart.shipping,
+        tax: cart.tax,
+        total: cart.total,
+        createdAt: cart.createdAt,
+        updatedAt: cart.updatedAt
+      }
+    });
   } catch (error) {
     console.error('Error fetching cart:', error);
     res.status(500).json({
