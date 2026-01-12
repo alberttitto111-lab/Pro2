@@ -22,7 +22,8 @@ import {
   Facebook,
   Twitter,
   Instagram,
-  LinkedIn
+  LinkedIn,
+  Place
 } from '@mui/icons-material';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import API from '../services/api'; 
@@ -420,31 +421,55 @@ const Contact = () => {
 
             {/* Map & Social */}
             <Grid item xs={12} md={6}>
-              {/* Map Placeholder */}
+              {/* Google Maps Embed - Kansas */}
               <Card sx={{
                 borderRadius: 3,
                 boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
                 mb: 3,
                 overflow: 'hidden'
               }}>
-                <Box sx={{
+                <Box sx={{ 
                   height: 300,
-                  bgcolor: '#e0e0e0',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: '#666'
+                  position: 'relative',
+                  overflow: 'hidden'
                 }}>
-                  <Typography variant="h6">
-                    Interactive Map Location
-                  </Typography>
+                  {/* Google Maps Embed */}
+                  <iframe
+                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d101417.12389824002!2d-95.76954919999999!3d37.250312!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x87bda1804a029f8d%3A0xc6d8cf7a3fbfe45c!2sKansas%2C%20USA!5e0!3m2!1sen!2s!4v1710000000000!5m2!1sen!2s"
+                    width="100%"
+                    height="100%"
+                    style={{ 
+                      border: 0,
+                      filter: 'grayscale(20%) contrast(1.1)'
+                    }}
+                    allowFullScreen=""
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                    title="Kansas, USA Location Map"
+                  />
+                  {/* Overlay for better text visibility */}
+                  <Box sx={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    background: 'linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, transparent 30%)',
+                    pointerEvents: 'none'
+                  }} />
                 </Box>
                 <CardContent sx={{ p: 3 }}>
-                  <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
-                    Visit Our Headquarters
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
+                    <Place color="primary" />
+                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                      Kansas, USA Location
+                    </Typography>
+                  </Box>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                    Serving customers across Kansas with premium frozen food delivery
                   </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    733 Suffolk Ave, Brentwood, NY 11717, United States
+                  <Typography variant="caption" color="text.secondary">
+                    Click and drag to explore the map
                   </Typography>
                 </CardContent>
               </Card>
