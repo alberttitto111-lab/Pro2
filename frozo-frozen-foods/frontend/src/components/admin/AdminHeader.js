@@ -1,5 +1,3 @@
-// frontend/src/components/admin/AdminHeader.js
-
 import React, { useContext, useState, useEffect } from 'react';
 import {
   AppBar,

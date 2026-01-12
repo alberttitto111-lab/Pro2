@@ -1,5 +1,3 @@
-// frontend/src/components/admin/ProductForm.js
-
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import {
@@ -210,7 +208,7 @@ const ProductForm = ({ product, onSuccess, onCancel }) => {
         {/* Header */}
         <Grid item xs={12}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-            <Typography variant="h6" sx={{ fontWeight: 600 }}>
+            <Typography variant="h4" sx={{ fontWeight: 600 }}>
               Product Information
             </Typography>
             <Typography variant="body2" color="text.secondary">
@@ -555,7 +553,7 @@ const ProductForm = ({ product, onSuccess, onCancel }) => {
         </Grid>
 
         {/* Decimal Examples */}
-        <Grid item xs={12}>
+        {/* <Grid item xs={12}>
           <Alert severity="info" sx={{ borderRadius: 2, mb: 2 }}>
             <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
               💡 Decimal Input Examples:
@@ -591,7 +589,7 @@ const ProductForm = ({ product, onSuccess, onCancel }) => {
               </Grid>
             </Grid>
           </Alert>
-        </Grid>
+        </Grid> */}
 
         {/* Action Buttons */}
         <Grid item xs={12}>

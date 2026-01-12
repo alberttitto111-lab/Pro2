@@ -1,5 +1,3 @@
-// frontend/src/components/storefront/ProductCard.js
-
 import React from 'react';
 import { Card, CardContent, CardMedia, Typography, Box, Rating, Chip, Button, IconButton } from '@mui/material';
 import AddShoppingCartIcon from '@mui/icons-material/AddShoppingCart';

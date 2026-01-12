@@ -1,5 +1,3 @@
-// frontend/src/components/storefront/CategoryProductCard.js
-
 import React from 'react';
 import { Box, Typography, Chip, Rating, Button, IconButton } from '@mui/material';
 import { useCart } from '../../contexts/CartContext';
