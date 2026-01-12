@@ -11,6 +11,10 @@ const AdminAddProduct = () => {
     navigate('/admin');
   };
 
+  const handleCancel = () => {
+    navigate('/admin');
+  };
+
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <Box sx={{ mb: 4 }}>
@@ -30,7 +34,10 @@ const AdminAddProduct = () => {
             Fill in the details below to add a new product to your store.
           </Typography>
           
-          <ProductForm onSuccess={handleSuccess} />
+          <ProductForm 
+            onSuccess={handleSuccess}
+            onCancel={handleCancel}
+          />
         </Paper>
       </Box>
     </Container>

@@ -137,13 +137,21 @@ const fetchProducts = async () => {
     setFormModalOpen(true);
   };
 
-  const handleFormSuccess = () => {
-    setFormModalOpen(false);
-    setEditingProduct(null);
-    setSelectedTemplate(null);
-    fetchProducts();
-    showSnackbar('Product saved successfully!', 'success');
-  };
+  const handleFormSuccess = (result) => {
+  // Check if result indicates cancellation
+  if (result && result.cancelled) {
+    // Handle cancellation (just close the modal)
+    handleFormClose();
+    return;
+  }
+  
+  // Otherwise, it's a successful save
+  setFormModalOpen(false);
+  setEditingProduct(null);
+  setSelectedTemplate(null);
+  fetchProducts();
+  showSnackbar('Product saved successfully!', 'success');
+};
 
   const handleFormClose = () => {
     setFormModalOpen(false);
@@ -586,6 +594,7 @@ const fetchProducts = async () => {
           <ProductForm 
             product={editingProduct} 
             onSuccess={handleFormSuccess}
+            onCancel={handleFormClose}
           />
         </DialogContent>
         

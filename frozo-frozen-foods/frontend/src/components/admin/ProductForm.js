@@ -26,7 +26,7 @@ import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import DeleteIcon from '@mui/icons-material/Delete';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 
-const ProductForm = ({ product, onSuccess }) => {
+const ProductForm = ({ product, onSuccess, onCancel }) => {
   const { register, handleSubmit, formState: { errors, isSubmitting }, reset, watch, setValue } = useForm({
     defaultValues: product || {
       name: '',
@@ -603,8 +603,27 @@ const ProductForm = ({ product, onSuccess }) => {
             justifyContent: 'flex-end',
             gap: 2
           }}>
+            {/* <Button
+      type="button" // ADD THIS LINE - CRITICAL FIX
+      onClick={onSuccess}
+      variant="outlined"
+      color="inherit"
+      startIcon={<CancelIcon />}
+      disabled={isSubmitting || uploadingImage}
+    >
+      Cancel
+    </Button> */}
             <Button
-              onClick={onSuccess}
+              type="button"
+              onClick={() => {
+                // Call a different callback for cancel
+                if (onCancel) {
+                  onCancel(); // Call specific cancel callback if provided
+                } else if (onSuccess) {
+                  // For backward compatibility, pass a flag to indicate cancellation
+                  onSuccess(true); // Pass true to indicate cancellation
+                }
+              }}
               variant="outlined"
               color="inherit"
               startIcon={<CancelIcon />}
@@ -612,6 +631,7 @@ const ProductForm = ({ product, onSuccess }) => {
             >
               Cancel
             </Button>
+
             <Button
               type="submit"
               variant="contained"
