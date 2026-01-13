@@ -1,5 +1,3 @@
-// frontend/src/components/admin/AdminHeader.js
-
 import React, { useContext, useState, useEffect } from 'react';
 import {
   AppBar,
@@ -14,8 +12,9 @@ import {
   Chip,
   Badge
 } from '@mui/material';
+import MenuIcon from '@mui/icons-material/Menu';
 import { Link, useNavigate } from 'react-router-dom';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+// import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import LogoutIcon from '@mui/icons-material/Logout';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
@@ -59,6 +58,17 @@ const AdminHeader = () => {
     handleMenuClose();
   };
 
+  const [mobileMenuAnchor, setMobileMenuAnchor] = useState(null);
+
+const handleMobileMenuOpen = (event) => {
+  setMobileMenuAnchor(event.currentTarget);
+};
+
+const handleMobileMenuClose = () => {
+  setMobileMenuAnchor(null);
+};
+
+
   const adminNavItems = [
     { label: 'Dashboard', path: '/admin', icon: <DashboardIcon /> },
     { 
@@ -95,7 +105,7 @@ const AdminHeader = () => {
       <Toolbar sx={{ justifyContent: 'space-between' }}>
         {/* Left side - Logo and Back button */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <IconButton
+          {/* <IconButton
             color="inherit"
             onClick={() => navigate('/')}
             sx={{
@@ -107,7 +117,7 @@ const AdminHeader = () => {
             }}
           >
             <ArrowBackIcon />
-          </IconButton>
+          </IconButton> */}
           <Typography
             variant="h6"
             component={Link}
@@ -159,8 +169,23 @@ const AdminHeader = () => {
           ))}
         </Box>
 
-        {/* Mobile Navigation */}
-        <Box sx={{ display: { xs: 'flex', md: 'none' }, gap: 1 }}>
+
+        {/* Tablet Navigation (768px) */}
+        <Box sx={{ display: { xs: 'none', sm: 'flex', md: 'none' }, gap: 1 }}>
+          <IconButton
+            component={Link}
+            to="/admin"
+            color="inherit"
+            sx={{
+              bgcolor: 'rgba(255,255,255,0.1)',
+              '&:hover': {
+                bgcolor: 'rgba(255,255,255,0.2)',
+              },
+            }}
+          >
+            <DashboardIcon />
+          </IconButton>
+
           <IconButton
             component={Link}
             to="/admin/notifications"
@@ -172,8 +197,8 @@ const AdminHeader = () => {
               },
             }}
           >
-            <Badge 
-              badgeContent={unreadCount} 
+            <Badge
+              badgeContent={unreadCount}
               color="error"
               sx={{
                 '& .MuiBadge-badge': {
@@ -189,26 +214,106 @@ const AdminHeader = () => {
           </IconButton>
         </Box>
 
+
+        {/* Mobile Navigation */}
+        {/* Mobile Menu Button (xs only) */}
+<Box sx={{ display: { xs: 'flex', sm: 'none' },ml: 'auto' }}>
+  <IconButton
+    color="inherit"
+    onClick={handleMobileMenuOpen}
+    sx={{
+      bgcolor: 'rgba(255,255,255,0.1)',
+      '&:hover': {
+        bgcolor: 'rgba(255,255,255,0.2)',
+      },
+    }}
+  >
+    <MenuIcon />
+  </IconButton>
+
+  <Menu
+    anchorEl={mobileMenuAnchor}
+    open={Boolean(mobileMenuAnchor)}
+    onClose={handleMobileMenuClose}
+    PaperProps={{
+      sx: {
+        mt: 1.5,
+        minWidth: 220,
+        borderRadius: 2,
+      },
+    }}
+  >
+    {/* Dashboard */}
+    <MenuItem
+      component={Link}
+      to="/admin"
+      onClick={handleMobileMenuClose}
+    >
+      <DashboardIcon sx={{ mr: 1 }} />
+      Dashboard
+    </MenuItem>
+
+    {/* Notifications */}
+    <MenuItem
+      component={Link}
+      to="/admin/notifications"
+      onClick={handleMobileMenuClose}
+    >
+      <Badge badgeContent={unreadCount} color="error" sx={{ mr: 1 }}>
+        <NotificationsIcon />
+      </Badge>
+      Notifications
+    </MenuItem>
+
+    {/* View Store */}
+    <MenuItem
+      component={Link}
+      to="/"
+      onClick={handleMobileMenuClose}
+    >
+      View Store
+    </MenuItem>
+
+    {/* Administrator */}
+    <MenuItem disabled>
+      <AccountCircleIcon sx={{ mr: 1 }} />
+      Administrator
+    </MenuItem>
+
+    {/* Logout */}
+    <MenuItem
+      onClick={() => {
+        handleLogout();
+        handleMobileMenuClose();
+      }}
+      sx={{ color: 'error.main' }}
+    >
+      <LogoutIcon fontSize="small" sx={{ mr: 1 }} />
+      Logout
+    </MenuItem>
+  </Menu>
+</Box>
+
+
+
         {/* Right side - User menu and Store link */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <Button
-            component={Link}
-            to="/"
-            variant="outlined"
-            sx={{
-              color: 'white',
-              borderColor: 'white',
-              '&:hover': {
-                borderColor: 'white',
-                bgcolor: 'rgba(255,255,255,0.1)',
-              },
-            }}
-          >
-            View Store
-          </Button>
+  component={Link}
+  to="/"
+  sx={{
+    display: { xs: 'none', sm: 'inline-flex' },
+    color: 'white',
+    borderColor: 'white',
+  }}
+>
+  View Store
+</Button>
+
 
           {/* User Menu */}
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          {/* <Box sx={{ display: 'flex', alignItems: 'center' }}> */}
+          <Box sx={{ display: { xs: 'none', sm: 'flex' } }}>
             <IconButton
               onClick={handleMenuOpen}
               sx={{
@@ -267,6 +372,7 @@ const AdminHeader = () => {
               </MenuItem>
             </Menu>
           </Box>
+
         </Box>
       </Toolbar>
     </AppBar>
