@@ -271,4 +271,4 @@ const AdminHeader = () => {
   );
 };
 
-export default AdminHeader;
+export default AdminHeader; // End of AdminHeader component
